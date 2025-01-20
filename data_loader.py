@@ -11,11 +11,14 @@ def generate_synthetic_data(
 ):
     np.random.seed(random_state)
     if task_type == 'classification':
+        n_informative = min(n_features, 10)
+        n_redundant = min(max(0, n_features - n_informative), 2)
+
         X, y = make_classification(
             n_samples=n_samples,
             n_features=n_features,
-            n_informative=10,
-            n_redundant=2,
+            n_informative=n_informative,
+            n_redundant=n_redundant,
             random_state=random_state
         )
     else:

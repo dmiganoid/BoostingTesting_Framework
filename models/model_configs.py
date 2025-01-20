@@ -30,6 +30,12 @@ except ImportError:
     CatBoostClassifier = None
     CatBoostRegressor = None
 
+from models.custom_boosting import (
+    MadaBoostClassifier,
+    BrownBoostClassifier,
+    FilterBoostClassifier
+)
+
 
 def get_default_model_configs(task_type='classification', random_state=42):
     if task_type not in ('classification', 'regression'):
@@ -104,6 +110,34 @@ def get_default_model_configs(task_type='classification', random_state=42):
                 "depth": 3,
                 "random_state": random_state,
                 "silent": True
+            }
+        }
+
+    # MadaBoost (каркас)
+    if task_type == 'classification':
+        model_configs["MadaBoost"] = {
+            "model_class": MadaBoostClassifier,
+            "params": {
+                "n_estimators": 50,
+                "random_state": random_state,
+            }
+        }
+
+    if task_type == 'classification':
+        model_configs["BrownBoost"] = {
+            "model_class": BrownBoostClassifier,
+            "params": {
+                "n_estimators": 50,
+                "random_state": random_state
+            }
+        }
+
+    if task_type == 'classification':
+        model_configs["FilterBoost"] = {
+            "model_class": FilterBoostClassifier,
+            "params": {
+                "n_estimators": 50,
+                "random_state": random_state
             }
         }
 
