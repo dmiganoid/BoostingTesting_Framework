@@ -41,7 +41,9 @@ class GBMBenchmarkTrainer:
             mem_after = get_memory_usage_mb()
             mem_usage = mem_after - mem_before
 
+            time_before = time.time()
             preds = model.predict(X_test)
+            inference_time = time.time() - time_before
 
             metric_value = self.metric_func(y_test, preds)
 
@@ -50,6 +52,7 @@ class GBMBenchmarkTrainer:
             results.append({
                 "model": model_name,
                 "train_time_sec": train_time,
+                "inference_time_sec": inference_time,
                 "memory_usage_mb": mem_usage,
                 self.metric_name: metric_value
             })

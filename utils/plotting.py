@@ -18,17 +18,22 @@ def plot_benchmark_results(results_df, task_type, output_dir="plots"):
     plt.figure(figsize=(18, 5))
     sns.set_style("whitegrid")
 
-    plt.subplot(1, 3, 1)
+    plt.subplot(1, 4, 1)
     sns.barplot(data=results_df, x='model', y=metric_name, palette='Blues_r')
     plt.title(f"{metric_title} Comparison", fontsize=14)
     plt.xticks(rotation=25, ha='right')
 
-    plt.subplot(1, 3, 2)
+    plt.subplot(1, 4, 2)
     sns.barplot(data=results_df, x='model', y='train_time_sec', palette='Greens_r')
     plt.title("Training Time (sec)", fontsize=14)
     plt.xticks(rotation=25, ha='right')
+    
+    plt.subplot(1, 4, 3)
+    sns.barplot(data=results_df, x='model', y='inference_time_sec', palette='Greens_r')
+    plt.title("Inference Time (sec)", fontsize=14)
+    plt.xticks(rotation=25, ha='right')
 
-    plt.subplot(1, 3, 3)
+    plt.subplot(1, 4, 4)
     sns.barplot(data=results_df, x='model', y='memory_usage_mb', palette='Reds_r')
     plt.title("Memory Usage (MB)", fontsize=14)
     plt.xticks(rotation=25, ha='right')

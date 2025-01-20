@@ -25,7 +25,7 @@ def main():
     parser.add_argument('--random_state', type=int, default=42,
                         help='Значение для воспроизводимости.')
     parser.add_argument('--plot_dir', type=str, default='plots',
-                        help='Папка для сохранения графиков.')
+                        help='Директория для сохранения графиков.')
     args = parser.parse_args()
 
     print("=== Запуск фреймворка GBM Benchmark ===")

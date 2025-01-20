@@ -30,11 +30,22 @@ except ImportError:
     CatBoostClassifier = None
     CatBoostRegressor = None
 
-from models.custom_boosting import (
-    MadaBoostClassifier,
-    BrownBoostClassifier,
-    FilterBoostClassifier
-)
+try:
+    from models.custom_boosting import BrownBoostClassifier, BrownBoostRegressor
+except ImportError:
+    BrownBoostClassifier = None
+    BrownBoostRegressor = None
+
+try:
+    from models.custom_boosting import MadaBoostClassifier, MadaBoostRegressor
+except ImportError:
+    MadaBoostClassifier = None
+    MadaBoostRegressor = None
+
+try:
+    from models.custom_boosting import FilterBoostClassifier
+except ImportError:
+    FilterBoostClassifier = None
 
 
 def get_default_model_configs(task_type='classification', random_state=42):
@@ -113,8 +124,7 @@ def get_default_model_configs(task_type='classification', random_state=42):
             }
         }
 
-    # MadaBoost (каркас)
-    if task_type == 'classification':
+    if task_type == 'classification' and MadaBoostClassifier is not None:
         model_configs["MadaBoost"] = {
             "model_class": MadaBoostClassifier,
             "params": {
@@ -123,7 +133,7 @@ def get_default_model_configs(task_type='classification', random_state=42):
             }
         }
 
-    if task_type == 'classification':
+    if task_type == 'classification' and BrownBoostClassifier is not None:
         model_configs["BrownBoost"] = {
             "model_class": BrownBoostClassifier,
             "params": {
@@ -132,7 +142,7 @@ def get_default_model_configs(task_type='classification', random_state=42):
             }
         }
 
-    if task_type == 'classification':
+    if task_type == 'classification' and FilterBoostClassifier is not None:
         model_configs["FilterBoost"] = {
             "model_class": FilterBoostClassifier,
             "params": {
@@ -140,7 +150,16 @@ def get_default_model_configs(task_type='classification', random_state=42):
                 "random_state": random_state
             }
         }
-
+        
+    if task_type == 'regression' and MadaBoostRegressor is not None:
+        model_configs["MadaBoost"] = {
+            "model_class": MadaBoostRegressor,
+            "params": {
+                "n_estimators": 50,
+                "random_state": random_state,
+            }
+        }
+        
     return model_configs
 
 
