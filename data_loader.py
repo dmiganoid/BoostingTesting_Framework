@@ -1,5 +1,3 @@
-# gbm_benchmark/data_loader.py
-
 import numpy as np
 import pandas as pd
 from sklearn.datasets import make_classification, make_regression
@@ -11,10 +9,6 @@ def generate_synthetic_data(
     n_features=20,
     random_state=42
 ):
-    """
-    Генерирует синтетический датасет для классификации или регрессии.
-    Возвращает (X, y) как DataFrame и Series соответственно.
-    """
     np.random.seed(random_state)
     if task_type == 'classification':
         X, y = make_classification(
@@ -37,13 +31,7 @@ def generate_synthetic_data(
 
 
 def load_data_from_csv(path):
-    """
-    Пример функции для чтения данных из CSV.
-    Предполагается, что в CSV последняя колонка - это целевая переменная (y).
-    Или вы можете адаптировать под себя.
-    """
     df = pd.read_csv(path)
-    # допустим, предположим, что последняя колонка - это target
     X = df.iloc[:, :-1]
     y = df.iloc[:, -1]
     return X, y
