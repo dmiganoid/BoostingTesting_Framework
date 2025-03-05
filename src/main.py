@@ -1,7 +1,7 @@
 import argparse
 from sklearn.model_selection import train_test_split
 
-from data_loader import generate_synthetic_data
+from src.data_loader import generate_synthetic_data
 from models.model_configs import get_default_model_configs
 from models.trainer import GBMBenchmarkTrainer
 from utils.plotting import (
