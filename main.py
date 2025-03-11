@@ -1,4 +1,3 @@
-from sklearn.model_selection import train_test_split
 import numpy as np
 from models.trainer import BoostingBenchmarkTrainer
 from sklearn.datasets import make_classification
@@ -43,8 +42,8 @@ def run_benchmark():
             n_samples=np.random.randint(1000, 1100)
         )
         trainer.fit_and_evaluate(
-            *train_test_split(X, y, test_size=configuration['test']['test_size'], random_state=configuration['test']['random_state']), 
-            test_name = f'{results_path}/test-random-{i}'
+            X, y, test_size=configuration['test']['test_size'], random_state=configuration['test']['random_state'],
+            test_name = f'{results_path}/test-random-{i}',
         )
     
     print("=== Boosting Benchmark Finished ===")

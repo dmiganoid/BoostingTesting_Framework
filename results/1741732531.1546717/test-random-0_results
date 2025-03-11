@@ -1,1 +1,0 @@
-{"AdaBoost": {"model_params": "{'algorithm': 'SAMME', 'estimator': DecisionTreeClassifier(max_depth=1), 'learning_rate': 0.1, 'n_estimators': 50}", "train_time_sec": 1.080157995223999, "inference_time_sec": 0.0019974708557128906, "memory_usage_mb": 1.3203125, "train_accuracy": 0.9405594405594405, "test_accuracy": 0.9078947368421053}}

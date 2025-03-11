@@ -4,6 +4,7 @@ import json
 from sklearn.metrics import accuracy_score
 from utils.misc import get_memory_usage_mb
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
 
 def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
     # base estimator initialization
@@ -12,7 +13,7 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
             from sklearn.tree import DecisionTreeClassifier
             base_estimator = DecisionTreeClassifier(**base_estimator_cfg['estimator_params'])
         case "neural_network":
-            pass
+            raise NotImplementedError
 
     param_grid = dict()
     algorithm_class = None
@@ -25,13 +26,17 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
             param_grid["algorithm"] = ['SAMME']
 
-        case "GradientBoosting":
+        case "GradientBoosting": #  DOES NOT SUPPORT ESTIMATORS
             from sklearn.ensemble import GradientBoostingClassifier
             algorithm_class = GradientBoostingClassifier
             param_grid["loss"] = ['exponential']
-            param_grid["estimator"] = [base_estimator]
+            #  param_grid["estimator"] = [base_estimator]
             param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+
+        case "BrownBoost":
+            pass
+
     return (algorithm_class, param_grid)
 
 
@@ -42,8 +47,9 @@ class BoostingBenchmarkTrainer:
         self.algorithms = algorithms
         self.algorithm_configs = algorithm_configs
         
-    def fit_and_evaluate(self, X_train, X_test, y_train, y_test, test_name="test"):
+    def fit_and_evaluate(self, X, y, random_state=42, test_size=0.15, test_name="test"):
         results = {}
+        X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size)
         for algorithm_name in self.algorithms:
 
             algorithm_class, algorithm_param_grid = load_algorithm(algorithm=algorithm_name, algorithm_config=self.algorithm_configs, base_estimator_cfg=self.base_estimator_cfg)
@@ -73,6 +79,9 @@ class BoostingBenchmarkTrainer:
                 "train_accuracy" : accuracy_score(model.predict(X_train), y_train),
                 "test_accuracy" : accuracy_score(model.predict(X_test), y_test)
             }
+
+        np.save(f'{test_name}_{'train-dataset'}', np.hstack((X_train, y_train.reshape(X.shape[0], 1))))
+        np.save(f'{test_name}_{'test-dataset'}', np.hstack((X_test, y_test.reshape(X.shape[0], 1))))
 
         with open(f'{test_name}_results', 'w') as file:
             json.dump(results, file)
