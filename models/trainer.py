@@ -5,26 +5,52 @@ from sklearn.metrics import accuracy_score
 from utils.misc import get_memory_usage_mb
 from sklearn.model_selection import GridSearchCV
 
+def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
+    # base estimator initialization
+    match base_estimator_cfg['estimator_type']:
+        case "stump":
+            from sklearn.tree import DecisionTreeClassifier
+            base_estimator = DecisionTreeClassifier(**base_estimator_cfg['estimator_params'])
+        case "neural_network":
+            pass
+
+    param_grid = dict()
+    algorithm_class = None
+    match algorithm:
+        case "AdaBoost":
+            from sklearn.ensemble import AdaBoostClassifier
+            algorithm_class = AdaBoostClassifier
+            param_grid["estimator"] = [base_estimator]
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+            param_grid["algorithm"] = ['SAMME']
+
+        case "GradientBoosting":
+            from sklearn.ensemble import GradientBoostingClassifier
+            algorithm_class = GradientBoostingClassifier
+            param_grid["loss"] = ['exponential']
+            param_grid["estimator"] = [base_estimator]
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+    return (algorithm_class, param_grid)
+
+
+
 class BoostingBenchmarkTrainer:
-    def __init__(self, base_estimator, algorithms : list, algorithm_configs: dict):
-        self.base_estimator = base_estimator
+    def __init__(self, base_estimator_cfg, algorithms : list, algorithm_configs: dict):
+        self.base_estimator_cfg = base_estimator_cfg
         self.algorithms = algorithms
         self.algorithm_configs = algorithm_configs
         
-    def fit_and_evaluate(self, X_train, y_train, X_test, y_test, test_name="test"):
+    def fit_and_evaluate(self, X_train, X_test, y_train, y_test, test_name="test"):
         results = {}
-        trained_models = {}
+        for algorithm_name in self.algorithms:
 
-        for algorithm in self.algorithms:
-            algorithm_name = type(algorithm).__name__
-            algorithm_param_grid = self.algorithm_configs['common']
-            if algorithm_name in self.algorithm_configs['common'].keys():
-                for key,value in self.algorithm_configs['common'][algorithm_name].items():
-                    algorithm_param_grid[key] = [value]
+            algorithm_class, algorithm_param_grid = load_algorithm(algorithm=algorithm_name, algorithm_config=self.algorithm_configs, base_estimator_cfg=self.base_estimator_cfg)
 
-            print(algorithm)
             mem_before = get_memory_usage_mb()
-            model = GridSearchCV(algorithm, param_grid=algorithm_param_grid)
+            model = GridSearchCV(algorithm_class(), param_grid=algorithm_param_grid, n_jobs=-1)
+
 
             time_before = time.time()
             model.fit(X_train, y_train)
@@ -37,12 +63,10 @@ class BoostingBenchmarkTrainer:
             preds = model.best_estimator_.predict(X_test)
             inference_time = time.time() - time_before
 
-            np.save(f'results/{test_name}_{algorithm_name}.npy', preds)
-
-            trained_models[algorithm_name] = model
+            np.save(f'{test_name}_{algorithm_name}', preds)
 
             results[algorithm_name] = {
-                "model_params" : model.best_params_,
+                "model_params" : str(model.best_params_),
                 "train_time_sec": train_time,
                 "inference_time_sec": inference_time,
                 "memory_usage_mb": mem_usage,
@@ -50,5 +74,6 @@ class BoostingBenchmarkTrainer:
                 "test_accuracy" : accuracy_score(model.predict(X_test), y_test)
             }
 
-        json.dump(results, f'results/test_{test_name}_results')
+        with open(f'{test_name}_results', 'w') as file:
+            json.dump(results, file)
         return 0
