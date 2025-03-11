@@ -8,7 +8,7 @@ import copy as cp
 
 
 class BrownBoost:
-    def __init__(self, base_estimator, c=10, convergence_criterion=0.0001, max_iter=10000):
+    def __init__(self, base_estimator, c=10, convergence_criterion=0.0001, n_estimators=100):
         """ Initiates BrownBoost classifier
         
         Parameters
@@ -24,8 +24,8 @@ class BrownBoost:
         """
         self.base_estimator = base_estimator
         self.c = c
-        self.max_iter = max_iter
-        self.max_iter_newton_raphson = max_iter / 100
+        self.n_estimators = n_estimators
+        self.max_iter_newton_raphson = 10000
         self.convergence_criterion = convergence_criterion
         self.alphas = []
         self.hs = []
@@ -48,13 +48,13 @@ class BrownBoost:
         # Initiate parameters
         self.__init__(base_estimator=self.base_estimator,
                       c=self.c,
-                      max_iter=self.max_iter,
+                      n_estimators=self.n_estimators,
                       convergence_criterion=self.convergence_criterion)
 
         s = self.c
         r = np.zeros(X.shape[0])
         k = 0
-        while s >= 0 and k < self.max_iter :
+        while s >= 0 and k < self.n_estimators :
 #             print(f'iter is {k}\ts = {s}')
             k += 1
             w = np.exp(-(r + s)**2 / self.c)
@@ -63,7 +63,7 @@ class BrownBoost:
             h.fit(X, y, sample_weight=w)
             pred = h.predict(X)
             
-            error = np.multiply(pred, y)
+            error = np.multiply(pred, y)+1e-10
             gamma = np.dot(w, error)
 
             alpha, t = self.newton_raphson(r, error, s, gamma)
@@ -125,6 +125,7 @@ class BrownBoost:
         a = r + s
         change_amount = self.convergence_criterion + 1
         k = 0
+        error+=1e-10
 
         while change_amount > self.convergence_criterion and k < self.max_iter_newton_raphson:
             d = a + alpha * error - t

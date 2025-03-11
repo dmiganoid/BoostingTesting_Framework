@@ -1,95 +1,64 @@
-import argparse
 from sklearn.model_selection import train_test_split
+import numpy as np
+from models.trainer import BoostingBenchmarkTrainer
+from sklearn.datasets import make_classification
+from utils.misc import parse_json_config
+import os
 
-from data_loader import generate_synthetic_data
-from models.model_configs import get_default_model_configs
-from models.trainer import GBMBenchmarkTrainer
-from utils.plotting import (
-    plot_benchmark_results,
-    plot_roc_curves,
-    plot_decision_boundaries_2d
-)
+def run_benchmark():
+    configuration = parse_json_config("c:/Users/Need2BuySSD/Documents/GitHub/BoostingTesting_Framework/cfg.json")
+    selected_classes = []
+    if "GradientBoosting" in configuration['algorithms']:
+        from sklearn.ensemble import GradientBoostingClassifier
+        selected_classes.append(GradientBoostingClassifier)
 
+    if "AdaBoost" in configuration['algorithms']:
+        from sklearn.ensemble import AdaBoostClassifier
+        selected_classes.append(AdaBoostClassifier)
 
-def main():
-    parser = argparse.ArgumentParser(description="GBM Benchmark Framework")
-    parser.add_argument('--task', type=str, default='classification',
-                        choices=['classification', 'regression'],
-                        help='Тип задачи: classification или regression')
-    parser.add_argument('--test_size', type=float, default=0.2,
-                        help='Доля выборки, отправляемая в тест.')
-    parser.add_argument('--n_samples', type=int, default=100000,
-                        help='Число объектов (строк) для синтетического датасета.')
-    parser.add_argument('--n_features', type=int, default=2,
-                        help='Число признаков (столбцов). Для наглядности decision boundary часто делают =2.')
-    parser.add_argument('--random_state', type=int, default=42,
-                        help='Значение для воспроизводимости.')
-    parser.add_argument('--plot_dir', type=str, default='plots',
-                        help='Директория для сохранения графиков.')
-    args = parser.parse_args()
-
-    print("=== Запуск фреймворка GBM Benchmark ===")
-    print(f"Task: {args.task}")
-    print(f"Test size: {args.test_size}")
-    print(f"Num samples: {args.n_samples}")
-    print(f"Num features: {args.n_features}")
-    print(f"Random state: {args.random_state}\n")
-
-    X, y = generate_synthetic_data(
-        task_type=args.task,
-        n_samples=args.n_samples,
-        n_features=args.n_features,
-        random_state=args.random_state
+    # base estimator initialization
+    match configuration['test']['estimator']:
+        case "stump":
+            from sklearn.tree import DecisionTreeClassifier
+            base_estimator = DecisionTreeClassifier(**configuration['test']['estimator_params'])
+    
+        
+    
+    print("=== Starting Boosting Benchmark ===")
+    trainer = BoostingBenchmarkTrainer(
+        base_estimator=base_estimator,
+        algorithms=selected_classes,
+        algorithm_configs=configuration['model']
     )
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
-        test_size=args.test_size,
-        random_state=args.random_state
-    )
+    # Real datasets (not implemented)
+    if False:
+        if configuration['test']['realdatasets'] != "all":
+            for dataset in configuration['test']['realdatasets']:
+                data = np.genfromtxt(f"datasets/{dataset}.csv", delimiter=",")
+                X, y = data[:,:-1], data[:, -1]
+                trainer.fit_and_evaluate(
+                    *train_test_split(X, y, test_size=configuration['test']['test_size'], random_state=configuration['test']['random_state']), 
+                    test_name = f'test-random-{i}'
+                )
+        else:
+            for dataset in os.listdir("datasets/"):
+                data = np.genfromtxt(f"datasets/{dataset}", delimiter=",")
+                X, y = data[:,:-1], data[:, -1]
+                trainer.fit_and_evaluate(
+                    *train_test_split(X, y, test_size=configuration['test']['test_size'], random_state=configuration['test']['random_state']),
+                    test_name = f'test-random-{i}'
+                )
 
-    model_configs = get_default_model_configs(
-        task_type=args.task,
-        random_state=args.random_state
-    )
-
-    trainer = GBMBenchmarkTrainer(
-        model_configs=model_configs,
-        task_type=args.task
-    )
-
-    results_df, trained_models = trainer.fit_and_evaluate(
-        X_train, y_train, X_test, y_test
-    )
-
-    print("=== Результаты бенчмарка ===")
-    print(results_df)
-
-    plot_benchmark_results(
-        results_df,
-        task_type=args.task,
-        output_dir=args.plot_dir
-    )
-    print(f"[1] Сохранён файл: {args.plot_dir}/benchmark_comparison.png")
-
-    if args.task == 'classification':
-        plot_roc_curves(
-            trained_models_dict=trained_models,
-            X_test=X_test,
-            y_test=y_test,
-            output_dir=args.plot_dir
+    # Synthetic datasets
+    for i in range(configuration['test']['N_synthetic_tests']):
+        X, y = make_classification(
+            n_samples=np.random.randint(1000, 200000)
         )
-        print(f"[2] Сохранён файл: {args.plot_dir}/roc_curves.png")
-
-    if args.n_features == 2 and args.task == 'classification':
-        plot_decision_boundaries_2d(
-            trained_models_dict=trained_models,
-            X_train=X_train,
-            y_train=y_train,
-            output_dir=args.plot_dir
+        trainer.fit_and_evaluate(
+            *train_test_split(X, y, test_size=configuration['test']['test_size'], random_state=configuration['test']['random_state']), 
+            test_name = f'test-random-{i}'
         )
-        print(f"[3] Сохранён файл: {args.plot_dir}/decision_boundaries.png")
-
 
 if __name__ == "__main__":
-    main()
+    run_benchmark()
