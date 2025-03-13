@@ -41,20 +41,19 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
             param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
             param_grid["c"] = algorithm_config['BrownBoost']['c']
             param_grid["convergence_criterion"] = algorithm_config['BrownBoost']['convergence_criterion']
-            param_grid["learning_rate"] = [1] #algorithm_config['common']['learning_rate']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
 
         case "MadaBoost":
             from models.madaboost import MadaBoost
             algorithm_class = MadaBoost
             param_grid["estimator"] = [base_estimator]
             param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
-            param_grid["learning_rate"] = [ 1 ] # algorithm_config['common']['learning_rate']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
 
         case "FilterBoost":
             raise NotImplementedError
         
     return (algorithm_class, param_grid)
-
 
 
 class BoostingBenchmarkTrainer:
@@ -80,10 +79,11 @@ class BoostingBenchmarkTrainer:
             mem_usage = mem_after - mem_before
 
             time_before = time.time()
-            preds = model.best_estimator_.predict(X_test)
+            model.best_estimator_.predict(X)
             inference_time = time.time() - time_before
 
-            np.savetxt(f'{results_path}/{test_name}_{algorithm_class.__name__}.csv', preds, delimiter=",")
+            np.savetxt(f'{results_path}/{test_name}_train_{algorithm_class.__name__}.csv', model.best_estimator_.predict(X_train), delimiter=",")
+            np.savetxt(f'{results_path}/{test_name}_test_{algorithm_class.__name__}.csv', model.best_estimator_.predict(X_test), delimiter=",")
 
             results[algorithm_class.__name__] = {
                 "model_params" : str(model.best_params_),
@@ -93,8 +93,8 @@ class BoostingBenchmarkTrainer:
                 "train_accuracy" : accuracy_score(model.predict(X_train), y_train),
                 "test_accuracy" : accuracy_score(model.predict(X_test), y_test)
             }
-            np.savetxt(f'{results_path}/{test_name}_{'train-dataset'}.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
-            np.savetxt(f'{results_path}/{test_name}_{'test-dataset'}.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
+        np.savetxt(f'{results_path}/{test_name}_{'train-dataset'}.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
+        np.savetxt(f'{results_path}/{test_name}_{'test-dataset'}.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
 
         with open(f'{results_path}/{test_name}_results.json', 'w') as file:
             json.dump(results, file)
