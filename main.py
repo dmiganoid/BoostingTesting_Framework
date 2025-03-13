@@ -4,6 +4,7 @@ from sklearn.datasets import make_classification
 from utils.misc import parse_json_config
 from os import mkdir
 from time import time
+from models.trainer import load_algorithm
 
 def run_benchmark():
     configuration = parse_json_config("c:/Users/Need2BuySSD/Documents/GitHub/BoostingTesting_Framework/configs/cfg.json")
@@ -12,11 +13,14 @@ def run_benchmark():
 
     results_path = f'results/{time()}'
     mkdir(results_path)
+    algorithms = []
+    for algorithm in configuration['algorithms']:
+        algorithms.append(load_algorithm(algorithm=algorithm, algorithm_config=configuration['model'], base_estimator_cfg=configuration['estimator']))
+
     trainer = BoostingBenchmarkTrainer(
-            base_estimator_cfg=configuration['estimator'],
-            algorithms=configuration['algorithms'],
-            algorithm_configs=configuration['model']
+            algorithms=algorithms
     )
+
     # Real datasets (not implemented)
     if False:
         if configuration['test']['realdatasets'] != "all":
