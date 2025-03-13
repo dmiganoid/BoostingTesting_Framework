@@ -140,8 +140,6 @@ def plot_mode():
         for json_file in all_jsons:
             json_path = os.path.join(dir_path, json_file)
 
-            # test_name = <что-то>_results.json => уберём "_results.json"
-            # например, "test-random-0_results.json" -> "test-random-0"
             test_name = json_file.replace("_results.json", "")
 
             plot_subdir = os.path.join(dir_path, "plots", test_name)
@@ -167,34 +165,53 @@ def plot_mode():
             else:
                 print(f"[{test_name}] Skipping {bench_png}, already exists.")
 
-            test_csv = os.path.join(dir_path, f"{test_name}_test-dataset.csv")
-            if not os.path.exists(test_csv):
-                print(f"[{test_name}] Not found {test_csv}, skipping confusion matrix")
+            train_data_file = os.path.join(dir_path, f"{test_name}_train-dataset.csv")
+            test_data_file = os.path.join(dir_path, f"{test_name}_test-dataset.csv")
+            if not os.path.exists(train_data_file) or not os.path.exists(test_data_file):
+                print(f"[{test_name}] No train-dataset.csv or test-dataset.csv, skiping confusion matrix.")
                 continue
 
-            test_data = np.genfromtxt(test_csv, delimiter=",")
-            X_test = test_data[:, :-1]
-            y_test = test_data[:, -1]
-
+            train_data = np.genfromtxt(train_data_file, delimiter=",")
+            test_data = np.genfromtxt(test_data_file, delimiter=",")
+            X_train, y_train = train_data[:, :-1], train_data[:, -1], 
+            X_test, y_test = test_data[:, :-1], test_data[:, -1],
 
             for model_name in data.keys():
-                pred_csv = os.path.join(dir_path, f"{test_name}_{model_name}.csv")
-                if not os.path.exists(pred_csv):
-                    print(f"[{test_name}][{model_name}] No predictions, skip.")
+                train_pred_file = os.path.join(dir_path, f"{test_name}_train_{model_name}.csv")
+                test_pred_file  = os.path.join(dir_path, f"{test_name}_test_{model_name}.csv")
+
+                if not os.path.exists(train_pred_file):
+                    print(f"[{test_name}][{model_name}] file with train predictions not found: {train_pred_file}")
+                    continue
+                if not os.path.exists(test_pred_file):
+                    print(f"[{test_name}][{model_name}] file with test predictions not found: {test_pred_file}")
                     continue
 
-                preds = np.genfromtxt(pred_csv, delimiter=",")
+                train_preds = np.genfromtxt(train_pred_file, delimiter=",")
+                test_preds  = np.genfromtxt(test_pred_file,  delimiter=",")
 
-                cm_png = os.path.join(plot_subdir, f"{model_name}_confusion_matrix.png")
-                if not os.path.exists(cm_png):
-                    cm = confusion_matrix(y_test, preds)
-                    disp = ConfusionMatrixDisplay(cm)
+                cm_train_png = os.path.join(plot_subdir, f"{model_name}_train_confusion_matrix.png")
+                if not os.path.exists(cm_train_png):
+                    cm_train = confusion_matrix(y_train, train_preds)
+                    disp = ConfusionMatrixDisplay(cm_train)
                     disp.plot()
-                    plt.title(f"{model_name}: Confusion Matrix ({test_name})")
-                    plt.savefig(cm_png, dpi=150)
+                    plt.title(f"{model_name} (train) Confusion Matrix\n{test_name}")
+                    plt.savefig(cm_train_png, dpi=150)
                     plt.close()
-                    print(f"[{test_name}][{model_name}] Saved file {cm_png}")
+                    print(f"[{test_name}][{model_name}] Saved file: {cm_train_png}")
                 else:
-                    print(f"[{test_name}][{model_name}] Skipping {cm_png}, already exists.")
+                    print(f"[{test_name}][{model_name}] Skipping {cm_train_png}, already exists.")
+
+                cm_test_png = os.path.join(plot_subdir, f"{model_name}_test_confusion_matrix.png")
+                if not os.path.exists(cm_test_png):
+                    cm_test = confusion_matrix(y_test, test_preds)
+                    disp = ConfusionMatrixDisplay(cm_test)
+                    disp.plot()
+                    plt.title(f"{model_name} (test) Confusion Matrix\n{test_name}")
+                    plt.savefig(cm_test_png, dpi=150)
+                    plt.close()
+                    print(f"[{test_name}][{model_name}] Saved file: {cm_test_png}")
+                else:
+                    print(f"[{test_name}][{model_name}] Skipping {cm_test_png}, already exists.")
 
     print("Done.")
