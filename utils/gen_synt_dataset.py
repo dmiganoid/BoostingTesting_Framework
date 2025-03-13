@@ -4,6 +4,7 @@ from matplotlib.widgets import Slider, Button, CheckButtons
 from scipy.interpolate import BSpline
 from scipy.optimize import minimize
 from matplotlib.backend_bases import MouseButton
+import os
 
 init_degree = 2
 init_N = 5
@@ -199,9 +200,12 @@ def draw(event):
     fig.canvas.draw_idle()
 
 
-def save_sample(event):
+def save_sample(event, path="datasets"):
     global X, labels
-    np.savetxt("dataset.csv", np.column_stack((X, labels.astype(int))), delimiter=",")
+    i = 0
+    while os.path.exists(f"{path}/dataset-generated-{i}.csv"):
+        i+=1
+    np.savetxt(f"{path}/dataset-generated-{i}.csv", np.column_stack((X, labels.astype(int))), delimiter=",")
 
 
 generate_button.on_clicked(draw)

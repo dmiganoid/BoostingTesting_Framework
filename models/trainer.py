@@ -83,7 +83,8 @@ class BoostingBenchmarkTrainer:
             preds = model.best_estimator_.predict(X_test)
             inference_time = time.time() - time_before
 
-            np.save(f'{results_path}/{test_name}_{algorithm_class.__name__}', preds)
+            np.savetxt(f'{results_path}/{test_name}_{algorithm_class.__name__}.csv', preds, delimiter=",")
+
             results[algorithm_class.__name__] = {
                 "model_params" : str(model.best_params_),
                 "train_time_sec": train_time,
@@ -92,9 +93,9 @@ class BoostingBenchmarkTrainer:
                 "train_accuracy" : accuracy_score(model.predict(X_train), y_train),
                 "test_accuracy" : accuracy_score(model.predict(X_test), y_test)
             }
+            np.savetxt(f'{results_path}/{test_name}_{'train-dataset'}.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
+            np.savetxt(f'{results_path}/{test_name}_{'test-dataset'}.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
 
-        np.save(f'{results_path}/{test_name}_{'train-dataset'}', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))))
-        np.save(f'{results_path}/{test_name}_{'test-dataset'}', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))))
         with open(f'{results_path}/{test_name}_results.json', 'w') as file:
             json.dump(results, file)
         print(f'Finished {test_name}')
