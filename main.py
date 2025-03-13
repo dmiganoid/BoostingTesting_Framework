@@ -104,25 +104,6 @@ def main_cli():
         required=True,
         help="Режим работы: generate, train или plot."
     )
-    parser.add_argument(
-        "--results_json",
-        type=str,
-        default=None,
-        help="Путь к JSON-файлу с результатами (используется, когда --mode=plot)."
-    )
-    parser.add_argument(
-        "--task_type",
-        type=str,
-        default="classification",
-        choices=["classification", "regression"],
-        help="Тип задачи для построения графиков (classification или regression)."
-    )
-    parser.add_argument(
-        "--plot_dir",
-        type=str,
-        default="plots",
-        help="Куда сохранять графики при --mode=plot."
-    )
 
     args = parser.parse_args()
 
