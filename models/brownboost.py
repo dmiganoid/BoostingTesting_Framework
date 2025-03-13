@@ -8,12 +8,12 @@ import copy as cp
 
 
 class BrownBoost:
-    def __init__(self, base_estimator, c=10, convergence_criterion=0.0001, n_estimators=100):
+    def __init__(self, estimator=None, c=10, convergence_criterion=0.0001, n_estimators=100, learning_rate=1):
         """ Initiates BrownBoost classifier
         
         Parameters
         ----------
-        base_estimator: classifier from scikit-learn
+        estimator: classifier from scikit-learn
             The base leaner in ensemble
         c: int or float
             A positive real value
@@ -22,11 +22,12 @@ class BrownBoost:
             A small constant(>0) used to avoid degenerate cases.
             default = 0.0001
         """
-        self.base_estimator = base_estimator
+        self.estimator = estimator
         self.c = c
         self.n_estimators = n_estimators
         self.max_iter_newton_raphson = 10000
         self.convergence_criterion = convergence_criterion
+        self.learning_rate = learning_rate
         self.alphas = []
         self.hs = []
 
@@ -44,12 +45,10 @@ class BrownBoost:
         --------
             self
         """
-
+        self.alphas = []
+        self.hs = []
+        y = np.where(y, 1, -1)
         # Initiate parameters
-        self.__init__(base_estimator=self.base_estimator,
-                      c=self.c,
-                      n_estimators=self.n_estimators,
-                      convergence_criterion=self.convergence_criterion)
 
         s = self.c
         r = np.zeros(X.shape[0])
@@ -59,7 +58,7 @@ class BrownBoost:
             k += 1
             w = np.exp(-(r + s)**2 / self.c)
 
-            h = cp.deepcopy(self.base_estimator)
+            h = cp.deepcopy(self.estimator)
             h.fit(X, y, sample_weight=w)
             pred = h.predict(X)
             
@@ -76,7 +75,7 @@ class BrownBoost:
             r += alpha * error
             s -= t
 
-            self.alphas.append(alpha)
+            self.alphas.append(alpha*self.learning_rate)
             self.hs.append(h)
 
     def predict(self, X):
@@ -95,7 +94,7 @@ class BrownBoost:
         y = np.zeros(X.shape[0])
         for i in range(0, len(self.hs)):
             y += self.alphas[i] * self.hs[i].predict(X)
-        return np.sign(y)
+        return (np.sign(y) > 0).astype(int)
 
     def newton_raphson(self, r, error, s, gamma):
         """ Computes alpha and t
@@ -152,3 +151,23 @@ class BrownBoost:
             k += 1
         
         return alpha, t
+
+    def score(self, X, y):
+        return (self.predict(X)==y).sum()/X.shape[0]
+    
+    def get_params(self, deep=True):
+        return {
+            "convergence_criterion" : self.convergence_criterion,
+            "c" : self.c,
+            "n_estimators" : self.n_estimators,
+            "estimator" : self.estimator,
+            "learning_rate" : self.learning_rate
+             }
+    
+    def set_params(self, **params):
+        self.estimator = params.get("estimator", self.estimator)
+        self.c = params.get("c", self.c)
+        self.n_estimators = params.get("n_estimators", self.n_estimators)
+        self.convergence_criterion = params.get("convergence_criterion", self.convergence_criterion)
+        self.learning_rate = params.get("learning_rate", self.learning_rate)
+        return self

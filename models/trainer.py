@@ -3,8 +3,8 @@ import numpy as np
 import json
 from sklearn.metrics import accuracy_score
 from utils.misc import get_memory_usage_mb
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split
+
 
 def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
     # base estimator initialization
@@ -35,8 +35,24 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
 
         case "BrownBoost":
-            pass
+            from models.brownboost import BrownBoost
+            algorithm_class = BrownBoost
+            param_grid["estimator"] = [base_estimator]
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["c"] = algorithm_config['BrownBoost']['c']
+            param_grid["convergence_criterion"] = algorithm_config['BrownBoost']['convergence_criterion']
+            param_grid["learning_rate"] = [1] #algorithm_config['common']['learning_rate']
 
+        case "MadaBoost":
+            from models.madaboost import MadaBoost
+            algorithm_class = MadaBoost
+            param_grid["estimator"] = [base_estimator]
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = [ 1 ] # algorithm_config['common']['learning_rate']
+
+        case "FilterBoost":
+            raise NotImplementedError
+        
     return (algorithm_class, param_grid)
 
 
@@ -45,7 +61,7 @@ class BoostingBenchmarkTrainer:
     def __init__(self, algorithms : list):
         self.algorithms = algorithms
         
-    def fit_and_evaluate(self, X, y, random_state=42, test_size=0.15, test_name="test"):
+    def fit_and_evaluate(self, X, y, random_state=42, test_size=0.15, results_path="results/", test_name="test"):
         results = {}
         X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size)
         for algorithm_class, algorithm_param_grid in self.algorithms:
@@ -53,6 +69,7 @@ class BoostingBenchmarkTrainer:
             
             if algorithm_class == None:
                 continue
+
             model = GridSearchCV(algorithm_class(), param_grid=algorithm_param_grid, n_jobs=-1)
 
             time_before = time.time()
@@ -66,7 +83,7 @@ class BoostingBenchmarkTrainer:
             preds = model.best_estimator_.predict(X_test)
             inference_time = time.time() - time_before
 
-            np.save(f'{test_name}_{algorithm_class.__name__}', preds)
+            np.save(f'{results_path}/{test_name}_{algorithm_class.__name__}', preds)
             results[algorithm_class.__name__] = {
                 "model_params" : str(model.best_params_),
                 "train_time_sec": train_time,
@@ -76,9 +93,9 @@ class BoostingBenchmarkTrainer:
                 "test_accuracy" : accuracy_score(model.predict(X_test), y_test)
             }
 
-        np.save(f'{test_name}_{'train-dataset'}', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))))
-        np.save(f'{test_name}_{'test-dataset'}', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))))
-        with open(f'{test_name}_results', 'w') as file:
+        np.save(f'{results_path}/{test_name}_{'train-dataset'}', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))))
+        np.save(f'{results_path}/{test_name}_{'test-dataset'}', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))))
+        with open(f'{results_path}/{test_name}_results.json', 'w') as file:
             json.dump(results, file)
         print(f'Finished {test_name}')
         return 0

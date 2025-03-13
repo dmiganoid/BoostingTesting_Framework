@@ -43,14 +43,15 @@ def run_benchmark():
     # Synthetic datasets
     for i in range(configuration['test']['N_synthetic_tests']):
         X, y = make_classification(
-            n_samples=np.random.randint(1000, 1100)
+            n_samples=np.random.randint(1000, 3000)
         )
         trainer.fit_and_evaluate(
             X, y, test_size=configuration['test']['test_size'], random_state=configuration['test']['random_state'],
-            test_name = f'{results_path}/test-random-{i}',
+            results_path=results_path,
+            test_name = f'test-random-{i}',
         )
     
-    print("=== Boosting Benchmark Finished ===")
+    print("=== Benchmark Finished ===")
 
 if __name__ == "__main__":
     run_benchmark()

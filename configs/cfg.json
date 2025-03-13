@@ -1,5 +1,5 @@
 {
-    "algorithms" : ["CatBoost", "XGBoost", "LightGBM", "GradientBoosting", "AdaBoost", "MadaBoost", "BrownBoost", "FilterBoost"], 
+    "algorithms" : ["CatBoost", "XGBoost", "LightGBM", "GradientBoosting", "AdaBoost", "MadaBoost", "BrownBoost"], 
 
     "estimator" : {
         "estimator_type" : "stump",
@@ -9,14 +9,20 @@
     "test": {
         "test_size" : 0.15,
         "random_state" : 42,
-        "N_synthetic_tests" : 10
+        "N_synthetic_tests" : 3
     },
     
     "model": {
         "common" :{
-            "n_estimators": [50],
-            "learning_rate": [0.1]
+            "n_estimators": [50, 75, 100, 150],
+            "learning_rate": [0.01, 0.05, 0.1, 0.2]
         },
-        "CatBoost" : { "n_trees" : 3 } 
+        "BrownBoost" : {
+            "c" : [ 5, 10, 15, 25 ] ,
+            "convergence_criterion" : [0.0001, 0.001, 0.01, 0.1]
+        },
+        "MadaBoost" : {},
+
+        "CatBoost" : { "n_trees" : 3 }
     }
 }
