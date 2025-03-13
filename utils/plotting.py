@@ -2,7 +2,9 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from sklearn.metrics import roc_curve, auc
+import json
+import pandas as pd
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc
 
 
 def plot_benchmark_results(results_df, task_type, output_dir="plots"):
@@ -116,3 +118,83 @@ def plot_decision_boundaries_2d(
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "decision_boundaries.png"), dpi=150)
     plt.close()
+
+def plot_mode():
+    results_root = "results"
+    if not os.path.exists(results_root):
+        print(f"Папка {results_root} не найдена, ничего рисовать.")
+        return
+
+    for dir_name in os.listdir(results_root):
+        dir_path = os.path.join(results_root, dir_name)
+        if not os.path.isdir(dir_path):
+            continue 
+        
+        all_jsons = [
+            f for f in os.listdir(dir_path)
+            if f.endswith("_results.json")
+        ]
+        if not all_jsons:
+            continue
+
+        for json_file in all_jsons:
+            json_path = os.path.join(dir_path, json_file)
+
+            # test_name = <что-то>_results.json => уберём "_results.json"
+            # например, "test-random-0_results.json" -> "test-random-0"
+            test_name = json_file.replace("_results.json", "")
+
+            plot_subdir = os.path.join(dir_path, "plots", test_name)
+            os.makedirs(plot_subdir, exist_ok=True)
+
+            with open(json_path, "r") as f:
+                data = json.load(f)
+            rows = []
+            for model_name, info in data.items():
+                rows.append({
+                    "model": model_name,
+                    "accuracy": info.get("test_accuracy", 0),
+                    "train_time_sec": info.get("train_time_sec", 0),
+                    "inference_time_sec": info.get("inference_time_sec", 0),
+                    "memory_usage_mb": info.get("memory_usage_mb", 0)
+                })
+            results_df = pd.DataFrame(rows)
+
+            bench_png = os.path.join(plot_subdir, "benchmark_comparison.png")
+            if not os.path.exists(bench_png):
+                plot_benchmark_results(results_df, task_type="classification", output_dir=plot_subdir)
+                print(f"[{test_name}] Saved file {bench_png}")
+            else:
+                print(f"[{test_name}] Skipping {bench_png}, already exists.")
+
+            test_csv = os.path.join(dir_path, f"{test_name}_test-dataset.csv")
+            if not os.path.exists(test_csv):
+                print(f"[{test_name}] Not found {test_csv}, skipping confusion matrix")
+                continue
+
+            test_data = np.genfromtxt(test_csv, delimiter=",")
+            X_test = test_data[:, :-1]
+            y_test = test_data[:, -1]
+
+
+            for model_name in data.keys():
+                pred_csv = os.path.join(dir_path, f"{test_name}_{model_name}.csv")
+                if not os.path.exists(pred_csv):
+                    print(f"[{test_name}][{model_name}] No predictions, skip.")
+                    continue
+
+                preds = np.genfromtxt(pred_csv, delimiter=",")
+
+                cm_png = os.path.join(plot_subdir, f"{model_name}_confusion_matrix.png")
+                if not os.path.exists(cm_png):
+                    cm = confusion_matrix(y_test, preds)
+                    disp = ConfusionMatrixDisplay(cm)
+                    disp.plot()
+                    plt.title(f"{model_name}: Confusion Matrix ({test_name})")
+                    plt.savefig(cm_png, dpi=150)
+                    plt.close()
+                    print(f"[{test_name}][{model_name}] Saved file {cm_png}")
+                else:
+                    print(f"[{test_name}][{model_name}] Skipping {cm_png}, already exists.")
+
+    print("Done.")
