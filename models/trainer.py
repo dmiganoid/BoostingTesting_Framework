@@ -102,6 +102,7 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
         case "CatBoost":
             from catboost import CatBoostClassifier
             algorithm_class = CatBoostClassifier
+            param_grid['allow_writing_files'] = [False]
             param_grid['silent'] = [True]
             param_grid["iterations"] = algorithm_config['common']['n_estimators']
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']

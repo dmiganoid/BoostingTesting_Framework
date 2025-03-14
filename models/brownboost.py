@@ -142,7 +142,7 @@ class BrownBoost:
             E = (erf(d / math.sqrt(self.c)) - erf(a / math.sqrt(self.c))).sum()
 
             sqrt_pi_c = math.sqrt(math.pi * self.c)
-            denominator = 2*(V*W - U*B)
+            denominator = 2*(V*W - U*B) + 1e-5
             alpha_step = (self.c*W*B + sqrt_pi_c*U*E)/denominator
             t_step = (self.c*B*B + sqrt_pi_c*V*E)/denominator
 
