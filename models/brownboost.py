@@ -77,7 +77,9 @@ class BrownBoost:
 
             self.alphas.append(alpha*self.learning_rate)
             self.hs.append(h)
-
+        return self
+    
+    
     def predict(self, X):
         """ Classify the samples
         Parameters

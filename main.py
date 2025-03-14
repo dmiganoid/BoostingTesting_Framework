@@ -14,7 +14,6 @@ import subprocess
 from utils.plotting import plot_mode
 
 def run_benchmark():
-
     config_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "configs", "cfg.json"
@@ -63,20 +62,19 @@ def run_benchmark():
                 results_path=results_path,
                 test_name=test_name
             )
-    else:
-        N_synthetic_tests = configuration['test'].get('N_synthetic_tests', 3)
-        for i in range(N_synthetic_tests):
-            X, y = make_classification(
-                n_samples=np.random.randint(1000, 3000)
-            )
-            test_name = f"test-random-{i}"
-            trainer.fit_and_evaluate(
-                X, y,
-                test_size=configuration['test']['test_size'],
-                random_state=configuration['test']['random_state'],
-                results_path=results_path,
-                test_name=test_name,
-            )
+    N_synthetic_tests = configuration['test'].get('N_synthetic_tests', 3)
+    for i in range(N_synthetic_tests):
+        X, y = make_classification(
+            n_samples=np.random.randint(1000, 1200)
+        )
+        test_name = f"test-random-{i}"
+        trainer.fit_and_evaluate(
+            X, y,
+            test_size=configuration['test']['test_size'],
+            random_state=configuration['test']['random_state'],
+            results_path=results_path,
+            test_name=test_name,
+        )
 
     print("=== Benchmark Finished ===")
 
@@ -112,7 +110,7 @@ def main_cli():
         if not os.path.exists(script_path):
             print("ERROR: gen_synt_dataset.py not found!")
             sys.exit(1)
-        subprocess.run(["python3", script_path])
+        subprocess.run(["python", script_path])
     
     elif args.mode == "train":
         run_benchmark()

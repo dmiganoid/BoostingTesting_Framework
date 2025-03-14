@@ -2,19 +2,27 @@ import time
 import numpy as np
 import json
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import GridSearchCV, train_test_split
-
+from sklearn.model_selection import GridSearchCV, train_test_split, ParameterGrid
+from multiprocessing import Pool, cpu_count
 import sys
-import os
-
+from os import mkdir
+from functools import wraps
 # Ща захардкодил, завтра исправлю. Тут беда с импортом из родительской директории
 from os import getpid
 from psutil import Process
+
+
 def get_memory_usage_mb():
     process = Process(getpid())
     mem_bytes = process.memory_info().rss
     return mem_bytes / (1024 * 1024)
 
+
+def timed_wrapper(func, *args, **kwargs): # picklable workaround
+    start_time = time.time()
+    result = func(*args, **kwargs)
+    end_time = time.time()
+    return result, end_time-start_time
 
 def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
     # base estimator initialization
@@ -36,6 +44,7 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
             param_grid["algorithm"] = ['SAMME']
 
+        # No estimator for GradientBoosting
         case "GradientBoost":
             from sklearn.ensemble import GradientBoostingClassifier
             algorithm_class = GradientBoostingClassifier
@@ -63,10 +72,10 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
         case "CatBoost":
             from catboost import CatBoostClassifier
             algorithm_class = CatBoostClassifier
+            param_grid['silent'] = [True]
             param_grid["iterations"] = algorithm_config['common']['n_estimators']
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
             param_grid["depth"] = algorithm_config['CatBoost']['depth']
-            param_grid["verbose"] = [False]
 
         # No estimator for XGBoost
         case "XGBoost":
@@ -77,11 +86,13 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
             param_grid["max_depth"] = algorithm_config['XGBoost']['max_depth']
             param_grid["use_label_encoder"] = [False]
             param_grid["eval_metric"] = ["logloss"]
+            param_grid['verbosity'] = [0]
 
         # No estimator for LightGBM
         case "LightGBM":
             from lightgbm import LGBMClassifier
             algorithm_class = LGBMClassifier
+            param_grid['verbose'] = [-1]
             param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
             param_grid["max_depth"] = algorithm_config['LightGBM']['max_depth']
@@ -100,44 +111,48 @@ class BoostingBenchmarkTrainer:
     def __init__(self, algorithms : list):
         self.algorithms = algorithms
         
-    def fit_and_evaluate(self, X, y, random_state=42, test_size=0.15, results_path="results/", test_name="test"):
+    def fit_and_evaluate(self, X, y, random_state=42, test_size=0.15, results_path="results", test_name="test"):
         results = {}
         X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size)
+        pool = Pool(processes=cpu_count()-1)
+        print(f"Starting {test_name}")
+        mkdir(f'{results_path}/{test_name}')
         for algorithm_class, algorithm_param_grid in self.algorithms:
-            mem_before = get_memory_usage_mb()
-            
             if algorithm_class == None:
                 continue
+            threads = []
+            print(f"Training {algorithm_class.__name__}")
+            for params in ParameterGrid(algorithm_param_grid):
+                model = algorithm_class(**params)
+                threads.append(pool.apply_async(timed_wrapper, args=[model.fit], kwds={ "X" : X, "y" : y }))
+            for model_i in range(len(threads)):
+                model, train_time = threads[model_i].get(timeout=None)
+                mem_usage = sys.getsizeof(model)
 
-            model = GridSearchCV(algorithm_class(), param_grid=algorithm_param_grid, n_jobs=-1)
 
-            time_before = time.time()
-            model.fit(X_train, y_train)
-            train_time = time.time() - time_before
+                time_before = time.time()
+                model.predict(X_test)
+                inference_time = time.time() - time_before
 
-            mem_after = get_memory_usage_mb()
-            mem_usage = mem_after - mem_before
+                np.savetxt(f'{results_path}/{test_name}/train_{algorithm_class.__name__}.csv', model.predict(X_train), delimiter=",")
+                np.savetxt(f'{results_path}/{test_name}/test_{algorithm_class.__name__}.csv', model.predict(X_test), delimiter=",")
 
-            time_before = time.time()
-            model.best_estimator_.predict(X_test)
-            inference_time = time.time() - time_before
-
-            np.savetxt(f'{results_path}/{test_name}_train_{algorithm_class.__name__}.csv', model.best_estimator_.predict(X_train), delimiter=",")
-            np.savetxt(f'{results_path}/{test_name}_test_{algorithm_class.__name__}.csv', model.best_estimator_.predict(X_test), delimiter=",")
-
-            results[algorithm_class.__name__] = {
-                "model_params" : str(model.best_params_),
-                "train_time_sec": train_time,
-                "inference_time_sec": inference_time,
-                "memory_usage_mb": mem_usage,
-                "train_accuracy" : accuracy_score(model.predict(X_train), y_train),
-                "test_accuracy" : accuracy_score(model.predict(X_test), y_test)
-            }
-            
-            np.savetxt(f'{results_path}/{test_name}_{'train-dataset'}.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
-            np.savetxt(f'{results_path}/{test_name}_{'test-dataset'}.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
-
-        with open(f'{results_path}/{test_name}_results.json', 'w') as file:
+                output_params = model.get_params()
+                if 'estimator' in output_params.keys():
+                    output_params['estimator'] = str(output_params['estimator'])
+                results[f"{algorithm_class.__name__}_{model_i}"] = {
+                    "model_params" : output_params,
+                    "train_time_sec": train_time,
+                    "inference_time_sec": inference_time,
+                    "memory_usage_mb": mem_usage,
+                    "train_accuracy" : accuracy_score(model.predict(X_train), y_train),
+                    "test_accuracy" : accuracy_score(model.predict(X_test), y_test)
+                }
+                
+                np.savetxt(f'{results_path}/{test_name}/{'train-dataset'}.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
+                np.savetxt(f'{results_path}/{test_name}/{'test-dataset'}.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
+        pool.close()
+        with open(f'{results_path}/{test_name}/results.json', 'w') as file:
             json.dump(results, file)
         print(f'Finished {test_name}')
         return 0

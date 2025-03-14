@@ -34,6 +34,7 @@ class MadaBoost:
 
             D_t = np.where(D_t*beta_t**(pred*y)<=1/n_samples, D_t*beta_t**(pred*y), 1/n_samples)
             D_t /= D_t.sum()
+        return self
 
     def predict(self, X, sign=True):
         prediction = np.zeros(X.shape[0])
