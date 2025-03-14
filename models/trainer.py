@@ -24,6 +24,36 @@ def timed_wrapper(func, *args, **kwargs): # picklable workaround
     end_time = time.time()
     return result, end_time-start_time
 
+def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, results_path):
+    model = algorithm_class(**params)
+    
+    start_time = time.time()
+    model.fit(X_train, y_train)
+    train_time = time.time() - start_time
+
+
+    start_time = time.time()
+    model.predict(X_test)
+    inference_time = time.time() - start_time
+
+    np.savetxt(f'{results_path}/train_{algorithm_class.__name__}.csv', model.predict(X_train), delimiter=",")
+    np.savetxt(f'{results_path}/test_{algorithm_class.__name__}.csv', model.predict(X_test), delimiter=",")
+    np.savetxt(f'{results_path}/train-dataset.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
+    np.savetxt(f'{results_path}/test-dataset.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
+ 
+    output_params = model.get_params()
+    if 'estimator' in output_params.keys():
+        output_params['estimator'] = str(output_params['estimator'])
+    results = {
+                    "model_params" : output_params,
+                    "train_time_sec": train_time,
+                    "inference_time_sec": inference_time,
+                    "memory_usage_mb": sys.getsizeof(model),
+                    "train_accuracy" : accuracy_score(model.predict(X_train), y_train),
+                    "test_accuracy" : accuracy_score(model.predict(X_test), y_test)
+                }
+    return results
+
 def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
     # base estimator initialization
     match base_estimator_cfg['estimator_type']:
@@ -123,34 +153,9 @@ class BoostingBenchmarkTrainer:
             threads = []
             print(f"Training {algorithm_class.__name__}")
             for params in ParameterGrid(algorithm_param_grid):
-                model = algorithm_class(**params)
-                threads.append(pool.apply_async(timed_wrapper, args=[model.fit], kwds={ "X" : X, "y" : y }))
+                threads.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X_train, X_test, y_train, y_test, f'{results_path}/{test_name}']))
             for model_i in range(len(threads)):
-                model, train_time = threads[model_i].get(timeout=None)
-                mem_usage = sys.getsizeof(model)
-
-
-                time_before = time.time()
-                model.predict(X_test)
-                inference_time = time.time() - time_before
-
-                np.savetxt(f'{results_path}/{test_name}/train_{algorithm_class.__name__}.csv', model.predict(X_train), delimiter=",")
-                np.savetxt(f'{results_path}/{test_name}/test_{algorithm_class.__name__}.csv', model.predict(X_test), delimiter=",")
-
-                output_params = model.get_params()
-                if 'estimator' in output_params.keys():
-                    output_params['estimator'] = str(output_params['estimator'])
-                results[f"{algorithm_class.__name__}_{model_i}"] = {
-                    "model_params" : output_params,
-                    "train_time_sec": train_time,
-                    "inference_time_sec": inference_time,
-                    "memory_usage_mb": mem_usage,
-                    "train_accuracy" : accuracy_score(model.predict(X_train), y_train),
-                    "test_accuracy" : accuracy_score(model.predict(X_test), y_test)
-                }
-                
-                np.savetxt(f'{results_path}/{test_name}/{'train-dataset'}.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
-                np.savetxt(f'{results_path}/{test_name}/{'test-dataset'}.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
+                results[f"{algorithm_class.__name__}_{model_i}"] = threads[model_i].get(timeout=None)
         pool.close()
         with open(f'{results_path}/{test_name}/results.json', 'w') as file:
             json.dump(results, file)
