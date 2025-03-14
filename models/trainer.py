@@ -3,14 +3,13 @@ import numpy as np
 import json
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV, train_test_split, ParameterGrid
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 import sys
 from os import mkdir
 from functools import wraps
 # Ща захардкодил, завтра исправлю. Тут беда с импортом из родительской директории
 from os import getpid
-from psutil import Process
-
+from psutil import Process, cpu_count
 
 def get_memory_usage_mb():
     process = Process(getpid())
@@ -145,7 +144,7 @@ class BoostingBenchmarkTrainer:
     def fit_and_evaluate(self, X, y, random_state=42, test_size=0.15, results_path="results", test_name="test"):
         results = {}
         X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size)
-        pool = Pool(processes=cpu_count()-1)
+        pool = Pool(processes=cpu_count(logical=False))
         print(f"Starting {test_name}")
         mkdir(f'{results_path}/{test_name}')
         for algorithm_class, algorithm_param_grid in self.algorithms:
