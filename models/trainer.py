@@ -41,7 +41,7 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
     np.savetxt(f'{results_path}/train-dataset.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
     np.savetxt(f'{results_path}/test-dataset.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
  
-    output_params = model.get_params()
+    output_params = params
     if 'estimator' in output_params.keys():
         output_params['estimator'] = str(output_params['estimator'])
     results = {
