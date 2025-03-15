@@ -44,6 +44,7 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
         output_params['estimator'] = str(output_params['estimator'])
     results = {
                     "algorithm" : algorithm_class.__name__,
+                    "file_postfix" : f"{algorithm_class.__name__}{ind}",
                     "model_params" : output_params,
                     "train_time_sec": train_time,
                     "inference_time_sec": inference_time,
