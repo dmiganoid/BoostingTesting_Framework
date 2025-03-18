@@ -1,217 +1,317 @@
 import os
+import ast
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
-import json
-import pandas as pd
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 
-def plot_benchmark_results(results_df, task_type, output_dir="plots"):
-    os.makedirs(output_dir, exist_ok=True)
-
-    if task_type == 'classification':
-        metric_name = 'accuracy'
-        metric_title = 'Accuracy'
-    else:
-        metric_name = 'mse'
-        metric_title = 'MSE'
-
-    plt.figure(figsize=(18, 5))
-    sns.set_style("whitegrid")
-
-    plt.subplot(1, 4, 1)
-    sns.barplot(data=results_df, x='model', y=metric_name, palette='Blues_r')
-    plt.title(f"{metric_title} Comparison", fontsize=14)
-    plt.xticks(rotation=25, ha='right')
-
-    plt.subplot(1, 4, 2)
-    sns.barplot(data=results_df, x='model', y='train_time_sec', palette='Greens_r')
-    plt.title("Training Time (sec)", fontsize=14)
-    plt.xticks(rotation=25, ha='right')
-    
-    plt.subplot(1, 4, 3)
-    sns.barplot(data=results_df, x='model', y='inference_time_sec', palette='Greens_r')
-    plt.title("Inference Time (sec)", fontsize=14)
-    plt.xticks(rotation=25, ha='right')
-
-    plt.subplot(1, 4, 4)
-    sns.barplot(data=results_df, x='model', y='memory_usage_mb', palette='Reds_r')
-    plt.title("Memory Usage (MB)", fontsize=14)
-    plt.xticks(rotation=25, ha='right')
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, "benchmark_comparison.png"), dpi=150)
-    plt.close()
+def parse_params_dict(param_str):
+    if not isinstance(param_str, str):
+        return {}
+    try:
+        return ast.literal_eval(param_str)
+    except:
+        return {}
 
 
-def plot_roc_curves(
-        trained_models_dict,
-        X_test,
-        y_test,
-        output_dir="plots"
-    ):
-    os.makedirs(output_dir, exist_ok=True)
-
-    plt.figure(figsize=(8, 6))
-
-    for model_name, model in trained_models_dict.items():
-        if hasattr(model, "predict_proba"):
-            try:
-                y_proba = model.predict_proba(X_test)[:, 1]
-                fpr, tpr, _ = roc_curve(y_test, y_proba)
-                roc_auc = auc(fpr, tpr)
-                plt.plot(fpr, tpr, label=f"{model_name} (AUC={roc_auc:.2f})")
-            except:
-                pass
-
-    plt.plot([0, 1], [0, 1], linestyle='--', color='gray')
-    plt.title("ROC Curves")
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.legend(loc="lower right")
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, "roc_curves.png"), dpi=150)
-    plt.close()
+def make_param_str(params_dict, max_len=100):
+    items = [f"{k}={v}" for k, v in params_dict.items()]
+    s = ", ".join(items)
+    return s if len(s) <= max_len else s[:max_len] + "…"
 
 
-def plot_decision_boundaries_2d(
-        trained_models_dict,
-        X_train,
-        y_train,
-        output_dir="plots"
-    ):
-
-    if X_train.shape[1] != 2:
-        print("Для построения decision boundaries нужно ровно 2 признака.")
-        return
-
-    os.makedirs(output_dir, exist_ok=True)
-
-
-    X = X_train.to_numpy()
-    y = y_train.to_numpy()
-
-    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-
-    xx, yy = np.meshgrid(
-        np.linspace(x_min, x_max, 100),
-        np.linspace(y_min, y_max, 100)
-    )
-
-    fig, axes = plt.subplots(
-        1, len(trained_models_dict),
-        figsize=(5 * len(trained_models_dict), 4),
-        squeeze=False
-    )
-    axes = axes.ravel()
-
-    for idx, (model_name, model) in enumerate(trained_models_dict.items()):
-        Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
-        Z = Z.reshape(xx.shape)
-
-        axes[idx].contourf(xx, yy, Z, alpha=0.5, cmap="coolwarm")
-        axes[idx].scatter(X[:, 0], X[:, 1], c=y, edgecolor='k', cmap="coolwarm")
-        axes[idx].set_title(model_name)
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, "decision_boundaries.png"), dpi=150)
-    plt.close()
-
-def plot_mode():
+def plot_mode(top_n=5, worst_n=5, top_k_per_algo=2):
     results_root = "results"
     if not os.path.exists(results_root):
-        print(f"Папка {results_root} не найдена, ничего рисовать.")
+        print("No results folder found.")
         return
 
-    for dir_name in os.listdir(results_root):
-        dir_path = os.path.join(results_root, dir_name)
-        if not os.path.isdir(dir_path):
-            continue 
-        
-        all_jsons = [
-            f for f in os.listdir(dir_path)
-            if f.endswith("_results.json")
-        ]
-        if not all_jsons:
+    metrics = [
+        ("test_accuracy", "Test Accuracy"),
+        ("train_accuracy", "Train Accuracy"),
+        ("train_time_sec", "Train Time (sec)"),
+        ("inference_time_sec", "Inference Time (sec)"),
+        ("memory_usage_mb", "Memory Usage (MB)"),
+    ]
+    for time_dir in os.listdir(results_root):
+        time_dir_path = os.path.join(results_root, time_dir)
+
+        if not os.path.isdir(time_dir_path):
             continue
 
-        for json_file in all_jsons:
-            json_path = os.path.join(dir_path, json_file)
-
-            test_name = json_file.replace("_results.json", "")
-
-            plot_subdir = os.path.join(dir_path, "plots", test_name)
-            os.makedirs(plot_subdir, exist_ok=True)
-
-            with open(json_path, "r") as f:
-                data = json.load(f)
-            rows = []
-            for model_name, info in data.items():
-                rows.append({
-                    "model": model_name,
-                    "accuracy": info.get("test_accuracy", 0),
-                    "train_time_sec": info.get("train_time_sec", 0),
-                    "inference_time_sec": info.get("inference_time_sec", 0),
-                    "memory_usage_mb": info.get("memory_usage_mb", 0)
-                })
-            results_df = pd.DataFrame(rows)
-
-            bench_png = os.path.join(plot_subdir, "benchmark_comparison.png")
-            if not os.path.exists(bench_png):
-                plot_benchmark_results(results_df, task_type="classification", output_dir=plot_subdir)
-                print(f"[{test_name}] Saved file {bench_png}")
-            else:
-                print(f"[{test_name}] Skipping {bench_png}, already exists.")
-
-            train_data_file = os.path.join(dir_path, f"{test_name}_train-dataset.csv")
-            test_data_file = os.path.join(dir_path, f"{test_name}_test-dataset.csv")
-            if not os.path.exists(train_data_file) or not os.path.exists(test_data_file):
-                print(f"[{test_name}] No train-dataset.csv or test-dataset.csv, skiping confusion matrix.")
+        for test_name in os.listdir(time_dir_path):
+            test_dir_path = os.path.join(time_dir_path, test_name)
+            if not os.path.isdir(test_dir_path):
                 continue
+            csv_path = os.path.join(test_dir_path, "results.json")
+            if not os.path.exists(csv_path):
+                continue
+            df = pd.read_csv(csv_path, sep=",", index_col=0)
+            if df.empty:
+                continue
+            df["model_params_dict"] = df["model_params"].apply(parse_params_dict)
+            df["param_str"] = df["model_params_dict"].apply(
+                lambda d: make_param_str(d, max_len=100)
+            )
+            plot_subdir = os.path.join(test_dir_path, "plots_split")
+            os.makedirs(plot_subdir, exist_ok=True)
+            algos = df["algorithm"].unique()
 
-            train_data = np.genfromtxt(train_data_file, delimiter=",")
-            test_data = np.genfromtxt(test_data_file, delimiter=",")
-            X_train, y_train = train_data[:, :-1], train_data[:, -1], 
-            X_test, y_test = test_data[:, :-1], test_data[:, -1],
-
-            for model_name in data.keys():
-                train_pred_file = os.path.join(dir_path, f"{test_name}_train_{model_name}.csv")
-                test_pred_file  = os.path.join(dir_path, f"{test_name}_test_{model_name}.csv")
-
-                if not os.path.exists(train_pred_file):
-                    print(f"[{test_name}][{model_name}] file with train predictions not found: {train_pred_file}")
+            for algo_name in algos:
+                sub_df = df[df["algorithm"] == algo_name].copy()
+                if sub_df.empty:
                     continue
-                if not os.path.exists(test_pred_file):
-                    print(f"[{test_name}][{model_name}] file with test predictions not found: {test_pred_file}")
+                sub_df_sorted = sub_df.sort_values("test_accuracy", ascending=False)
+                best_sub_df = sub_df_sorted.head(top_n).copy()
+                worst_sub_df = sub_df_sorted.tail(worst_n).copy()
+                for col, metric_title in metrics:
+                    ascending = True if ("time" in col or "memory" in col) else False
+                    temp_best = best_sub_df.sort_values(col, ascending=ascending)
+                    plt.figure(figsize=(20, 8))
+                    ax = plt.gca()
+                    ax.set_axisbelow(True)
+                    plt.grid(True, zorder=0)
+                    sns.barplot(
+                        data=temp_best,
+                        x="algorithm",
+                        y=col,
+                        hue="param_str",
+                        dodge=True,
+                        width=0.8,
+                        zorder=3,
+                    )
+                    plt.title(
+                        f"{algo_name} (Top {top_n} by test_accuracy)\n{test_name}\n{metric_title}"
+                    )
+                    ax.set_xticks([])
+                    ax.set_xlabel("")
+                    if "accuracy" in col:
+                        plt.yticks(np.linspace(0, 1, 21))
+                    plt.legend(
+                        bbox_to_anchor=(1.05, 1), loc="upper left", title="Parameters"
+                    )
+                    plt.tight_layout()
+                    out_png = os.path.join(
+                        plot_subdir, f"{algo_name}_{col}_best{top_n}.png"
+                    )
+                    plt.savefig(out_png, dpi=150)
+                    plt.close()
+
+                    temp_worst = worst_sub_df.sort_values(col, ascending=ascending)
+                    plt.figure(figsize=(20, 8))
+                    ax = plt.gca()
+                    ax.set_axisbelow(True)
+                    plt.grid(True, zorder=0)
+                    sns.barplot(
+                        data=temp_worst,
+                        x="algorithm",
+                        y=col,
+                        hue="param_str",
+                        dodge=True,
+                        width=0.8,
+                        zorder=3,
+                    )
+                    plt.title(
+                        f"{algo_name} (Worst {worst_n} by test_accuracy)\n{test_name}\n{metric_title}"
+                    )
+                    ax.set_xticks([])
+                    ax.set_xlabel("")
+                    if "accuracy" in col:
+                        plt.yticks(np.linspace(0, 1, 21))
+                    plt.legend(
+                        bbox_to_anchor=(1.05, 1), loc="upper left", title="Parameters"
+                    )
+                    plt.tight_layout()
+                    out_png = os.path.join(
+                        plot_subdir, f"{algo_name}_{col}_worst{worst_n}.png"
+                    )
+                    plt.savefig(out_png, dpi=150)
+                    plt.close()
+
+            df_sorted = df.sort_values("test_accuracy", ascending=False).copy()
+            top_all = df_sorted.head(top_n)
+            worst_all = df_sorted.tail(worst_n)
+            plt.figure(figsize=(20, 8))
+            ax = plt.gca()
+            ax.set_axisbelow(True)
+            plt.grid(True, zorder=0)
+            sns.barplot(
+                data=top_all,
+                x="algorithm",
+                y="test_accuracy",
+                hue="param_str",
+                dodge=True,
+                width=0.8,
+                zorder=3,
+            )
+            plt.title(f"Global Top {top_n} by test_accuracy\n{test_name}")
+            ax.set_xticks([])
+            ax.set_xlabel("")
+            plt.yticks(np.linspace(0, 1, 21))
+            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", title="Parameters")
+            plt.tight_layout()
+            out_png = os.path.join(plot_subdir, f"global_top{top_n}_test_accuracy.png")
+            plt.savefig(out_png, dpi=150)
+            plt.close()
+
+            plt.figure(figsize=(20, 8))
+            ax = plt.gca()
+            ax.set_axisbelow(True)
+            plt.grid(True, zorder=0)
+            sns.barplot(
+                data=worst_all,
+                x="algorithm",
+                y="test_accuracy",
+                hue="param_str",
+                dodge=True,
+                width=0.8,
+                zorder=3,
+            )
+            plt.title(f"Global Worst {worst_n} by test_accuracy\n{test_name}")
+            ax.set_xticks([])
+            ax.set_xlabel("")
+            plt.yticks(np.linspace(0, 1, 21))
+            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", title="Parameters")
+            plt.tight_layout()
+            out_png = os.path.join(
+                plot_subdir, f"global_worst{worst_n}_test_accuracy.png"
+            )
+            plt.savefig(out_png, dpi=150)
+            plt.close()
+
+            list_rows = []
+            for algo_name in algos:
+                sub_df = df[df["algorithm"] == algo_name].copy()
+                if sub_df.empty:
                     continue
+                sub_df = sub_df.sort_values("test_accuracy", ascending=False)
+                topX = sub_df.head(top_k_per_algo)
+                list_rows.append(topX)
+            comp_df = pd.concat(list_rows, ignore_index=True)
+            plt.figure(figsize=(20, 8))
+            ax = plt.gca()
+            ax.set_axisbelow(True)
+            plt.grid(True, zorder=0)
+            sns.barplot(
+                data=comp_df,
+                x="algorithm",
+                y="test_accuracy",
+                hue="param_str",
+                dodge=True,
+                width=0.8,
+                zorder=3,
+            )
+            plt.title(f"Comparison of best {top_k_per_algo} per algorithm\n{test_name}")
+            plt.yticks(np.linspace(0, 1, 21))
+            ax.set_xlabel("Algorithm")
+            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", title="Parameters")
+            plt.tight_layout()
+            out_png = os.path.join(
+                plot_subdir, f"comparison_top{top_k_per_algo}_per_algo.png"
+            )
+            plt.savefig(out_png, dpi=150)
+            plt.close()
 
-                train_preds = np.genfromtxt(train_pred_file, delimiter=",")
-                test_preds  = np.genfromtxt(test_pred_file,  delimiter=",")
+            plt.figure(figsize=(24, 8))
+            ax = plt.gca()
+            ax.set_axisbelow(True)
+            plt.grid(True, zorder=0)
+            sns.barplot(
+                data=comp_df,
+                x="param_str",
+                y="test_accuracy",
+                hue="algorithm",
+                dodge=True,
+                width=0.8,
+                zorder=3,
+            )
+            plt.title(f"Comparison (Algorithm in Legend)\n{test_name}")
+            plt.yticks(np.linspace(0, 1, 21))
+            plt.xticks(rotation=45, ha="right")
+            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", title="Algorithm")
+            plt.tight_layout()
+            out_png = os.path.join(plot_subdir, f"comparison_paramX_algoHue.png")
+            plt.savefig(out_png, dpi=150)
+            plt.close()
 
-                cm_train_png = os.path.join(plot_subdir, f"{model_name}_train_confusion_matrix.png")
-                if not os.path.exists(cm_train_png):
-                    cm_train = confusion_matrix(y_train, train_preds)
-                    disp = ConfusionMatrixDisplay(cm_train)
-                    disp.plot()
-                    plt.title(f"{model_name} (train) Confusion Matrix\n{test_name}")
-                    plt.savefig(cm_train_png, dpi=150)
-                    plt.close()
-                    print(f"[{test_name}][{model_name}] Saved file: {cm_train_png}")
-                else:
-                    print(f"[{test_name}][{model_name}] Skipping {cm_train_png}, already exists.")
+            params_to_compare = [
+                "n_estimators",
+                "learning_rate",
+                "depth",
+                "c",
+                "convergence_criterion",
+            ]
+            for param in params_to_compare:
+                df[param] = df["model_params_dict"].apply(
+                    lambda d: d.get(param, np.nan)
+                )
+                if df[param].notna().sum() == 0:
+                    continue
+                plt.figure(figsize=(20, 8))
+                ax = plt.gca()
+                ax.set_axisbelow(True)
+                plt.grid(True, zorder=0)
+                sns.barplot(
+                    data=df.dropna(subset=[param]),
+                    x=param,
+                    y="test_accuracy",
+                    hue="algorithm",
+                    dodge=True,
+                    ci=None,
+                    zorder=3,
+                )
+                plt.title(f"Test Accuracy vs {param}\n{test_name}")
+                plt.xlabel(param)
+                plt.ylabel("Test Accuracy")
+                plt.yticks(np.linspace(0, 1, 21))
+                plt.legend(
+                    bbox_to_anchor=(1.05, 1), loc="upper left", title="Algorithm"
+                )
+                plt.tight_layout()
+                out_png = os.path.join(plot_subdir, f"comparison_by_{param}.png")
+                plt.savefig(out_png, dpi=150)
+                plt.close()
 
-                cm_test_png = os.path.join(plot_subdir, f"{model_name}_test_confusion_matrix.png")
-                if not os.path.exists(cm_test_png):
-                    cm_test = confusion_matrix(y_test, test_preds)
-                    disp = ConfusionMatrixDisplay(cm_test)
-                    disp.plot()
-                    plt.title(f"{model_name} (test) Confusion Matrix\n{test_name}")
-                    plt.savefig(cm_test_png, dpi=150)
-                    plt.close()
-                    print(f"[{test_name}][{model_name}] Saved file: {cm_test_png}")
-                else:
-                    print(f"[{test_name}][{model_name}] Skipping {cm_test_png}, already exists.")
-
+            train_file = os.path.join(test_dir_path, "train-dataset.csv")
+            test_file = os.path.join(test_dir_path, "test-dataset.csv")
+            if not (os.path.exists(train_file) and os.path.exists(test_file)):
+                continue
+            train_data = np.genfromtxt(train_file, delimiter=",")
+            test_data = np.genfromtxt(test_file, delimiter=",")
+            y_train = train_data[:, -1]
+            y_test = test_data[:, -1]
+            cm_df = pd.concat([top_all, worst_all]).drop_duplicates(
+                subset=["algorithm", "file_postfix", "param_str"]
+            )
+            for i, row in cm_df.iterrows():
+                postfix = row["file_postfix"]
+                param_s = row["param_str"]
+                pred_train_file = os.path.join(
+                    test_dir_path, f"pred_train_{postfix}.csv"
+                )
+                pred_test_file = os.path.join(test_dir_path, f"pred_test_{postfix}.csv")
+                if not (
+                    os.path.exists(pred_train_file) and os.path.exists(pred_test_file)
+                ):
+                    continue
+                y_train_pred = np.genfromtxt(pred_train_file, delimiter=",")
+                y_test_pred = np.genfromtxt(pred_test_file, delimiter=",")
+                cm_train = confusion_matrix(y_train, y_train_pred)
+                disp = ConfusionMatrixDisplay(cm_train)
+                disp.plot()
+                plt.title(f"Train CM\n{param_s}\n{test_name}")
+                plt.tight_layout()
+                out_cm = os.path.join(plot_subdir, f"cm_train_{postfix}.png")
+                plt.savefig(out_cm, dpi=150)
+                plt.close()
+                cm_test = confusion_matrix(y_test, y_test_pred)
+                disp = ConfusionMatrixDisplay(cm_test)
+                disp.plot()
+                plt.title(f"Test CM\n{param_s}\n{test_name}")
+                plt.tight_layout()
+                out_cm = os.path.join(plot_subdir, f"cm_test_{postfix}.png")
+                plt.savefig(out_cm, dpi=150)
+                plt.close()
     print("Done.")
