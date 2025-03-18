@@ -61,7 +61,8 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg):
             from sklearn.tree import DecisionTreeClassifier
             base_estimator = DecisionTreeClassifier(**base_estimator_cfg['estimator_params'])
         case "neural_network":
-            raise NotImplementedError
+            from neural_classifier import NeuralBinaryClassifier
+            base_estimator = NeuralBinaryClassifier(**base_estimator_cfg['estimator_params'])
 
     param_grid = dict()
     algorithm_class = None
