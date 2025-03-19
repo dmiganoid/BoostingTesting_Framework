@@ -36,8 +36,8 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
     model.predict(X_test)
     inference_time = time.time() - start_time
 
-    np.savetxt(f'{results_path}/pred_train_{algorithm_class.__name__}{ind}.csv', model.predict(X_train), delimiter=",")
-    np.savetxt(f'{results_path}/pred_test_{algorithm_class.__name__}{ind}.csv', model.predict(X_test), delimiter=",")
+    np.savetxt(f'{results_path}/pred/train_{algorithm_class.__name__}{ind}.csv', model.predict(X_train), delimiter=",")
+    np.savetxt(f'{results_path}/pred/test_{algorithm_class.__name__}{ind}.csv', model.predict(X_test), delimiter=",")
  
     output_params = params
     if 'estimator' in output_params.keys():
@@ -149,6 +149,8 @@ class BoostingBenchmarkTrainer:
         pool = Pool(processes=cpu_count(logical=False))
         print(f"Starting {test_name}")
         mkdir(f'{results_path}/{test_name}')
+        mkdir(f'{results_path}/{test_name}/pred')
+
         np.savetxt(f'{results_path}/{test_name}/train-dataset.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
         np.savetxt(f'{results_path}/{test_name}/test-dataset.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
         for algorithm_class, algorithm_param_grid in self.algorithms:
@@ -161,6 +163,6 @@ class BoostingBenchmarkTrainer:
             for thread in threads:
                 results.append(thread.get(timeout=None))
         pool.close()
-        pd.DataFrame(results).to_csv(f'{results_path}/{test_name}/results.json', sep=",")
+        pd.DataFrame(results).to_csv(f'{results_path}/{test_name}/results.csv', sep=",")
         print(f'Finished {test_name}')
         return 0

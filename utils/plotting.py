@@ -45,7 +45,7 @@ def plot_mode(top_n=5, worst_n=5, top_k_per_algo=2):
             test_dir_path = os.path.join(time_dir_path, test_name)
             if not os.path.isdir(test_dir_path):
                 continue
-            csv_path = os.path.join(test_dir_path, "results.json")
+            csv_path = os.path.join(test_dir_path, "results.csv")
             if not os.path.exists(csv_path):
                 continue
             df = pd.read_csv(csv_path, sep=",", index_col=0)
