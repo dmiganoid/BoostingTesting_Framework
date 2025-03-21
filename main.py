@@ -11,7 +11,6 @@ import argparse
 import sys
 import subprocess
 
-from utils.plotting import plot_mode
 
 def run_benchmark():
     config_path = os.path.join(
@@ -106,18 +105,16 @@ def main_cli():
     args = parser.parse_args()
 
     if args.mode == "generate":
-        script_path = os.path.join("utils", "gen_synt_dataset.py")
-        if not os.path.exists(script_path):
-            print("ERROR: gen_synt_dataset.py not found!")
-            sys.exit(1)
-        subprocess.run(["python", script_path])
+        from utils.gen_synt_dataset import DataSetGenerator
+        DataSetGenerator()
     
     elif args.mode == "train":
         run_benchmark()
 
     elif args.mode == "plot":
+        from utils.plotting import plot_mode
         plot_mode()
-
+        
     else:
         parser.print_help()
 
