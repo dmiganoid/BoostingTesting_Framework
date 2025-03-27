@@ -98,7 +98,7 @@ class BrownBoostClassifier:
         y = np.zeros(X.shape[0])
         for i in range(0, len(self.estimators)):
             y += self.alphas[i] * self.estimators[i].predict(X)
-        return (np.sign(y) > 0).astype(int)
+        return (y > 0).astype(int)
 
     def newton_raphson(self, r, error, s, gamma):
         """ Computes alpha and t

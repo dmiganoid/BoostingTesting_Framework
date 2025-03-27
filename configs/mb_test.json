@@ -1,0 +1,28 @@
+{
+  "algorithms": ["MadaBoost"],
+
+  "estimator": {
+    "estimator_type": "stump",
+    "estimator_params": { "max_depth": [1, 2, 4, 8] }
+  },
+
+  "test": {
+    "test_size": 0.15,
+    "random_state": 42,
+    "N_synthetic_tests": 1,
+    "synthetic_tests_n_samples": 1000,
+    "multiprocessing" : true,
+    "use_predefined_datasets": true,
+    "predefined_dataset_paths": [
+      "datasets/dataset-generated-0.csv"
+    ]
+  },
+
+  "model": {
+    "common": {
+      "n_estimators": [ 2, 4, 8, 64, 128, 256],
+      "learning_rate": [ 0.001, 0.01, 0.1, 0.2, 1]
+    },
+    "MadaBoost": {}
+  }
+}

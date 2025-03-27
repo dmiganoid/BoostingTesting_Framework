@@ -96,6 +96,16 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
 
+        case "FilterBoost":
+            from models.filterboost import FilterBoostClassifier
+            algorithm_class = FilterBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+            param_grid["epsilon"] = algorithm_config['FilterBoost']['epsilon']
+            param_grid["delta"] = algorithm_config['FilterBoost']['delta']
+            param_grid["tau"] = algorithm_config['FilterBoost']['tau']
+
         # No estimator for CatBoost
         case "CatBoost":
             from catboost import CatBoostClassifier
@@ -128,8 +138,6 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
 
         # <TODO find way to implement different base estimators for CatBoost, XGBoost, LightGBM>
 
-        case "FilterBoost":
-            raise NotImplementedError
 
     return (algorithm_class, param_grid)
 

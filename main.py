@@ -23,7 +23,7 @@ def run_benchmark(cfg_file):
 
     print("=== Starting Boosting Benchmark ===")
 
-    results_path = os.path.join('results', f'{time()}-{cfg_file.split('.')[0]}') 
+    results_path = os.path.join('results', f'{cfg_file.split('.')[0]}-{time()}') 
     mkdir(results_path)
 
     algorithms = []

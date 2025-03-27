@@ -6,16 +6,16 @@ from sklearn.datasets import make_hastie_10_2, make_classification
 #from sklearn.tree import DecisionTreeClassifier
 class Oracle:
     def __init__(self, X, y, random_state):
-        self.X = x
+        self.X = X
         self.y = y
-        self.rng = np.random.Generator(random_state=random_state)
+        self.rng = np.random.default_rng(seed=random_state)
     def __call__(self):
         index = self.rng.integers(0, self.X.shape[0])
         return self.X[index], self.y[index]
     
     
-class FilterBoost:
-    def __init__(self, estimator, n_estimators=100, epsilon=0.1, delta=0.9, tau=0.2, learning_rate=1, m_t=None, random_state=None):
+class FilterBoostClassifier:
+    def __init__(self, estimator=None, n_estimators=100, epsilon=0.1, delta=0.9, tau=0.1, learning_rate=1, m_t=None, random_state=None):
         """
         Initialize FilterBoost.
         estimator: Number of iterations
@@ -39,7 +39,7 @@ class FilterBoost:
         self.learning_rate = learning_rate
         self.random_state = random_state
 
-    def compute_F(self, x):
+    def compute_F(self, X):
         """Compute F_t(x) for current hypothesis."""
         y = np.zeros(X.shape[0])
         for i in range(len(self.estimators)):
@@ -113,7 +113,7 @@ class FilterBoost:
         self.estimators = []
         if self.m_t is None:
             self.m_t = lambda t: X.shape[0]*t/self.n_estimators
-        self.oracle = Oracle(X,y, self.random_state)
+        self.oracle = Oracle(X, np.where(y, 1, -1), self.random_state)
         for t in range(1, self.n_estimators+1):
             self.r = 0
             self.delta_t = self.delta/(3*t*(t+1)) 
@@ -140,13 +140,13 @@ class FilterBoost:
 
 
     def predict(self, X, sign=True):
-        prediction = np.zeros(X.shape[0])
+        y = np.zeros(X.shape[0])
         for t in range(self.n_estimators):
-            prediction += self.alphas[t] * self.estimators[t].predict(X)
+            y += self.alphas[t] * self.estimators[t].predict(X)
         if sign:
-            return np.sign(prediction).astype(int)
+            return (np.sign(y) > 0).astype(int)
         else:
-            return prediction
+            return y
         
     def score(self, X, y):
         return (self.predict(X)==y).sum()/X.shape[0]
