@@ -55,22 +55,16 @@ def run_benchmark(cfg_file):
             X, y = data[:, :-1], data[:, -1]
 
             test_name = f"predefined-{i}"
-            if configuration['test'].get('multiprocessing', True):
-                trainer.fit_and_evaluate_mp(
-                    X, y,
-                    test_size=configuration['test']['test_size'],
-                    random_state=configuration['test']['random_state'],
-                    results_path=results_path,
-                    test_name=test_name
-                )
-            else:
-                trainer.fit_and_evaluate(
-                    X, y,
-                    test_size=configuration['test']['test_size'],
-                    random_state=configuration['test']['random_state'],
-                    results_path=results_path,
-                    test_name=test_name
-                )
+
+            trainer.fit_and_evaluate(
+                X, y,
+                test_size=configuration['test']['test_size'],
+                random_state=configuration['test']['random_state'],
+                results_path=results_path,
+                test_name=test_name,
+                multiprocessing= configuration['test'].get('multiprocessing', True)
+            )
+
     N_synthetic_tests = configuration['test'].get('N_synthetic_tests', 3)
     synthetic_test_n_samples = configuration['test'].get('synthetic_test_n_samples', 1000)
     for i in range(N_synthetic_tests):

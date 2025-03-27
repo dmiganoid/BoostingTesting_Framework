@@ -143,12 +143,12 @@ class BoostingBenchmarkTrainer:
         results = []
         X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size)   
         print(f"Starting {test_name}")
-        mkdir(f'{results_path}/{test_name}')
-        np.savetxt(f'{results_path}/{test_name}/train-dataset.csv', np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
-        np.savetxt(f'{results_path}/{test_name}/test-dataset.csv', np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
+        mkdir(os.path.join(results_path,test_name))
+        np.savetxt(os.path.join(results_path,test_name,'train-dataset.csv'), np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
+        np.savetxt(os.path.join(results_path,test_name,'test-dataset.csv'), np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
         save_predictions = ('random' not in test_name)
         if save_predictions:
-            mkdir(f'{results_path}/{test_name}/pred')
+            mkdir(os.path.join(results_path, test_name, 'pred'))
         if multiprocessing:
             cpus = cpu_count(logical=False)
             if type(multiprocessing) is int:
@@ -160,7 +160,7 @@ class BoostingBenchmarkTrainer:
                 threads = []
                 print(f"Training {algorithm_class.__name__}")
                 for ind, params in enumerate(ParameterGrid(algorithm_param_grid)):
-                    threads.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X_train, X_test, y_train, y_test, f'{results_path}/{test_name}'], kwds={"ind" : ind, "random_state" : random_state, "save_predictions" : save_predictions}))
+                    threads.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name)], kwds={"ind" : ind, "random_state" : random_state, "save_predictions" : save_predictions}))
                 for thread in threads:
                     results.append(thread.get(timeout=None))
             pool.close()
@@ -171,7 +171,7 @@ class BoostingBenchmarkTrainer:
                     continue
                 print(f"Training {algorithm_class.__name__}")
                 for index, params in enumerate(ParameterGrid(algorithm_param_grid)):
-                    results.append(train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, f'{results_path}/{test_name}', ind=index))
-        pd.DataFrame(results).to_csv(f'{results_path}/{test_name}/results.csv', sep=",")
+                    results.append(train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name), ind=index))
+        pd.DataFrame(results).to_csv(os.path.join(results_path,test_name,'results.csv'), sep=",")
         print(f'Finished {test_name}')
         return 0
