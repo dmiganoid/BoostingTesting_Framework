@@ -47,7 +47,6 @@ class BrownBoostClassifier:
         """
         self.alphas = []
         self.estimators = []
-        y = np.where(y, 1, -1)
         # Initiate parameters
 
         s = self.c
@@ -62,7 +61,7 @@ class BrownBoostClassifier:
             h.fit(X, y, sample_weight=w)
             pred = h.predict(X)
             
-            error = np.multiply(pred, y)+1e-10
+            error = np.where(pred==y, 1., -1.) # (pred==y)*2-1)
             if error.mean() < 0:
                 return self
             gamma = np.dot(w, error)

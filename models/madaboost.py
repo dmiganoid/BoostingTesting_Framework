@@ -9,7 +9,7 @@ class MadaBoostClassifier:
         self.estimator = estimator
         self.learning_rate = learning_rate
         self.alphas = []
-        self.models = []
+        self.estimators = []
         self.random_state = random_state
 
     def fit(self, X, y):
@@ -17,7 +17,6 @@ class MadaBoostClassifier:
         self.hs = []
         n_samples = X.shape[0]
         D_t = np.ones(n_samples) / n_samples
-        y = np.where(y, 1, -1)
         for t in range(self.n_estimators):
 
             h_t = cp.deepcopy(self.estimator)
@@ -31,16 +30,16 @@ class MadaBoostClassifier:
             alpha_t = np.log(1/beta_t)
             
             self.alphas.append(alpha_t*self.learning_rate)
-            self.models.append(h_t)
+            self.estimators.append(h_t)
 
-            D_t = np.where(D_t*beta_t**(pred*y)<=1/n_samples, D_t*beta_t**(pred*y), 1/n_samples)
+            D_t = np.where(D_t*beta_t**(np.where(pred*y,1,-1))<=1/n_samples, D_t*beta_t**(np.where(pred*y,1,-1)), 1/n_samples)
             D_t /= D_t.sum()
         return self
 
     def predict(self, X, sign=True):
         y = np.zeros(X.shape[0])
         for t in range(self.n_estimators):
-            y += self.alphas[t] * self.models[t].predict(X)
+            y += self.alphas[t] * self.estimators[t].predict(X)
         if sign:
             return (y > 0).astype(int)
         else:

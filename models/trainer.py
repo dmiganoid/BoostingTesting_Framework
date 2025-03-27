@@ -171,6 +171,7 @@ class BoostingBenchmarkTrainer:
                     threads.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name)], kwds={"ind" : ind, "random_state" : random_state, "save_predictions" : save_predictions}))
                 for thread in threads:
                     results.append(thread.get(timeout=None))
+                    print(results[-1]['train_accuracy'],results[-1]['test_accuracy'])
             pool.close()
 
         else:

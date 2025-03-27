@@ -3,7 +3,7 @@
 
   "estimator": {
     "estimator_type": "stump",
-    "estimator_params": { "max_depth": [1, 2, 4, 8] }
+    "estimator_params": { "max_depth": [1] }
   },
 
   "test": {
