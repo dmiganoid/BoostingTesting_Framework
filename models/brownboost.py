@@ -1,4 +1,4 @@
-#https://github.com/lapis-zero09/BrownBoost
+# Courtesy of https://github.com/lapis-zero09/BrownBoost
 
 
 import math
@@ -7,8 +7,8 @@ from scipy.special import erf
 import copy as cp
 
 
-class BrownBoost:
-    def __init__(self, estimator=None, c=10, convergence_criterion=0.0001, n_estimators=100, learning_rate=1):
+class BrownBoostClassifier:
+    def __init__(self, estimator=None, c=10, convergence_criterion=0.0001, n_estimators=100, learning_rate=1, random_state=None):
         """ Initiates BrownBoost classifier
         
         Parameters
@@ -29,8 +29,8 @@ class BrownBoost:
         self.convergence_criterion = convergence_criterion
         self.learning_rate = learning_rate
         self.alphas = []
-        self.hs = []
-
+        self.estimators = []
+        self.random_state = random_state
 
     def fit(self, X, y):
         """ Trains the classifier
@@ -46,7 +46,7 @@ class BrownBoost:
             self
         """
         self.alphas = []
-        self.hs = []
+        self.estimators = []
         y = np.where(y, 1, -1)
         # Initiate parameters
 
@@ -63,6 +63,8 @@ class BrownBoost:
             pred = h.predict(X)
             
             error = np.multiply(pred, y)+1e-10
+            if error.mean() < 0:
+                return self
             gamma = np.dot(w, error)
 
             alpha, t = self.newton_raphson(r, error, s, gamma)
@@ -76,7 +78,7 @@ class BrownBoost:
             s -= t
 
             self.alphas.append(alpha*self.learning_rate)
-            self.hs.append(h)
+            self.estimators.append(h)
         return self
     
     
@@ -94,8 +96,8 @@ class BrownBoost:
         """
 
         y = np.zeros(X.shape[0])
-        for i in range(0, len(self.hs)):
-            y += self.alphas[i] * self.hs[i].predict(X)
+        for i in range(0, len(self.estimators)):
+            y += self.alphas[i] * self.estimators[i].predict(X)
         return (np.sign(y) > 0).astype(int)
 
     def newton_raphson(self, r, error, s, gamma):
@@ -155,7 +157,7 @@ class BrownBoost:
         return alpha, t
 
     def score(self, X, y):
-        return (self.predict(X)==y).sum()/X.shape[0]
+        return (self.predict(X)==y).mean()
     
     def get_params(self, deep=True):
         return {
@@ -163,7 +165,8 @@ class BrownBoost:
             "c" : self.c,
             "n_estimators" : self.n_estimators,
             "estimator" : self.estimator,
-            "learning_rate" : self.learning_rate
+            "learning_rate" : self.learning_rate,
+            "random_state" : self.random_state
              }
     
     def set_params(self, **params):
@@ -172,4 +175,5 @@ class BrownBoost:
         self.n_estimators = params.get("n_estimators", self.n_estimators)
         self.convergence_criterion = params.get("convergence_criterion", self.convergence_criterion)
         self.learning_rate = params.get("learning_rate", self.learning_rate)
+        self.random_state = params.get("random_state", self.random_state)
         return self

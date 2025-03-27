@@ -3,14 +3,14 @@ import copy as cp
 
 
 
-class MadaBoost:
-    def __init__(self, estimator=None, n_estimators=500, learning_rate=1):
+class MadaBoostClassifier:
+    def __init__(self, estimator=None, n_estimators=500, learning_rate=1, random_state=None):
         self.n_estimators = n_estimators
         self.estimator = estimator
         self.learning_rate = learning_rate
         self.alphas = []
         self.models = []
-
+        self.random_state = random_state
 
     def fit(self, X, y):
         self.alphas = []
@@ -24,13 +24,13 @@ class MadaBoost:
             pred = h_t.predict(X)
 
             err_t = np.sum(D_t * (pred != y)) + 1e-10
-
+            if err_t > 0.5:
+                return self
             beta_t = np.sqrt(err_t/(1-err_t))
             alpha_t = np.log(1/beta_t)
             
             self.alphas.append(alpha_t*self.learning_rate)
             self.models.append(h_t)
-
 
             D_t = np.where(D_t*beta_t**(pred*y)<=1/n_samples, D_t*beta_t**(pred*y), 1/n_samples)
             D_t /= D_t.sum()
@@ -52,11 +52,14 @@ class MadaBoost:
         return {
             "n_estimators" : self.n_estimators,
             "estimator" : self.estimator,
-            "learning_rate" : self.learning_rate
+            "learning_rate" : self.learning_rate,
+            "random_state" : self.random_state
              }
     
     def set_params(self, **params):
         self.estimator = params.get("estimator", self.estimator)
         self.n_estimators = params.get("n_estimators", self.n_estimators)
         self.learning_rate = params.get("learning_rate", self.learning_rate)
+        self.random_state = params.get("random_state", self.random_state)
+
         return self

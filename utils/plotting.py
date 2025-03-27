@@ -35,8 +35,7 @@ def plot_mode(top_n=5, worst_n=5, top_k_per_algo=2):
         ("train_accuracy", "Train Accuracy"),
         ("train_time_sec", "Train Time (sec)"),
         ("inference_time_sec", "Inference Time (sec)"),
-        ("memory_usage_mb", "Memory Usage (MB)")
-    ]
+        ]
     
     for time_dir in os.listdir(results_root):
         time_dir_path = os.path.join(results_root, time_dir)
@@ -71,7 +70,7 @@ def plot_mode(top_n=5, worst_n=5, top_k_per_algo=2):
                 best_sub_df = sub_df_sorted.head(top_n).copy()
                 worst_sub_df = sub_df_sorted.tail(worst_n).copy()
                 for col, metric_title in metrics:
-                    ascending = True if ("time" in col or "memory" in col) else False
+                    ascending = True if ("time" in col) else False
                     
                     temp_best = best_sub_df.sort_values(col, ascending=ascending)
                     plt.figure(figsize=(20, 8))
@@ -224,8 +223,8 @@ def plot_mode(top_n=5, worst_n=5, top_k_per_algo=2):
             for i, row in cm_df.iterrows():
                 postfix = row["file_postfix"]
                 param_s = row["param_str"]
-                pred_train_file = os.path.join(test_dir_path, f"pred_train_{postfix}.csv")
-                pred_test_file = os.path.join(test_dir_path, f"pred_test_{postfix}.csv")
+                pred_train_file = os.path.join(test_dir_path, 'pred', f"train_{postfix}.csv")
+                pred_test_file = os.path.join(test_dir_path, 'pred', f"test_{postfix}.csv")
                 if not (os.path.exists(pred_train_file) and os.path.exists(pred_test_file)):
                     continue
                 y_train_pred = np.genfromtxt(pred_train_file, delimiter=",")

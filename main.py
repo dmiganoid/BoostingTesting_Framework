@@ -12,10 +12,10 @@ import sys
 import subprocess
 
 
-def run_benchmark():
+def run_benchmark(cfg_file):
     config_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        "configs", "cfg.json"
+        "configs", cfg_file#"cfg.json"
     )
 
     with open(config_path, "r") as file:
@@ -23,7 +23,7 @@ def run_benchmark():
 
     print("=== Starting Boosting Benchmark ===")
 
-    results_path = f'results/{time()}'
+    results_path = os.path.join('results', f'{time()}-{cfg_file.split('.')[0]}') 
     mkdir(results_path)
 
     algorithms = []
@@ -32,7 +32,8 @@ def run_benchmark():
             load_algorithm(
                 algorithm=algorithm,
                 algorithm_config=configuration['model'],
-                base_estimator_cfg=configuration['estimator']
+                base_estimator_cfg=configuration['estimator'],
+                random_state=configuration['test']['random_state']
             )
         )
 
@@ -54,25 +55,36 @@ def run_benchmark():
             X, y = data[:, :-1], data[:, -1]
 
             test_name = f"predefined-{i}"
-            trainer.fit_and_evaluate(
-                X, y,
-                test_size=configuration['test']['test_size'],
-                random_state=configuration['test']['random_state'],
-                results_path=results_path,
-                test_name=test_name
-            )
+            if configuration['test'].get('multiprocessing', True):
+                trainer.fit_and_evaluate_mp(
+                    X, y,
+                    test_size=configuration['test']['test_size'],
+                    random_state=configuration['test']['random_state'],
+                    results_path=results_path,
+                    test_name=test_name
+                )
+            else:
+                trainer.fit_and_evaluate(
+                    X, y,
+                    test_size=configuration['test']['test_size'],
+                    random_state=configuration['test']['random_state'],
+                    results_path=results_path,
+                    test_name=test_name
+                )
     N_synthetic_tests = configuration['test'].get('N_synthetic_tests', 3)
+    synthetic_test_n_samples = configuration['test'].get('synthetic_test_n_samples', 1000)
     for i in range(N_synthetic_tests):
         X, y = make_classification(
-            n_samples=np.random.randint(1000, 1200)
+            n_samples=synthetic_test_n_samples, class_sep=0.8
         )
-        test_name = f"test-random-{i}"
+        test_name = f"random-{i}"
         trainer.fit_and_evaluate(
             X, y,
             test_size=configuration['test']['test_size'],
             random_state=configuration['test']['random_state'],
             results_path=results_path,
             test_name=test_name,
+            multiprocessing= configuration['test'].get('multiprocessing', True)
         )
 
     print("=== Benchmark Finished ===")
@@ -101,7 +113,7 @@ def main_cli():
         required=True,
         help="Режим работы: generate, train или plot."
     )
-
+    parser.add_argument('--cfg')
     args = parser.parse_args()
 
     if args.mode == "generate":
@@ -109,7 +121,8 @@ def main_cli():
         DataSetGenerator()
     
     elif args.mode == "train":
-        run_benchmark()
+        cfg_file = args.cfg if args.cfg is not None else 'cfg.json'
+        run_benchmark(cfg_file)
 
     elif args.mode == "plot":
         from utils.plotting import plot_mode
