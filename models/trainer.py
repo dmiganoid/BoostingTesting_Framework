@@ -31,8 +31,8 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
     model.predict(X_test)
     inference_time = time.time() - start_time
     if save_predictions:
-        np.savetxt(os.path.join(results_path, 'pred', f'test_{algorithm_class.__name__}{ind}.csv'), model.predict(X_train), delimiter=",")
-        np.savetxt(os.path.join(results_path, 'pred', f'train_{algorithm_class.__name__}{ind}.csv'), model.predict(X_test), delimiter=",")
+        np.savetxt(os.path.join(results_path, 'pred', f'test_{algorithm_class.__name__}{ind}.csv'), model.predict(X_test), delimiter=",")
+        np.savetxt(os.path.join(results_path, 'pred', f'train_{algorithm_class.__name__}{ind}.csv'), model.predict(X_train), delimiter=",")
         
     output_params = params
     if 'estimator' in output_params.keys():
@@ -150,7 +150,7 @@ class BoostingBenchmarkTrainer:
     def fit_and_evaluate(self, X, y, random_state=None, test_size=0.15, results_path="results", test_name="test", multiprocessing=True):
         results = []
         X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size)   
-        print(f"Starting {test_name}")
+        print(f"== Starting {test_name} ==")
         mkdir(os.path.join(results_path,test_name))
         np.savetxt(os.path.join(results_path,test_name,'train-dataset.csv'), np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
         np.savetxt(os.path.join(results_path,test_name,'test-dataset.csv'), np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
@@ -171,7 +171,6 @@ class BoostingBenchmarkTrainer:
                     threads.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name)], kwds={"ind" : ind, "random_state" : random_state, "save_predictions" : save_predictions}))
                 for thread in threads:
                     results.append(thread.get(timeout=None))
-                    print(results[-1]['train_accuracy'],results[-1]['test_accuracy'])
             pool.close()
 
         else:
@@ -182,5 +181,5 @@ class BoostingBenchmarkTrainer:
                 for index, params in enumerate(ParameterGrid(algorithm_param_grid)):
                     results.append(train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name), ind=index))
         pd.DataFrame(results).to_csv(os.path.join(results_path,test_name,'results.csv'), sep=",")
-        print(f'Finished {test_name}')
+        print(f'== Finished {test_name} ==')
         return 0

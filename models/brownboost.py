@@ -48,7 +48,7 @@ class BrownBoostClassifier:
         self.alphas = []
         self.estimators = []
         # Initiate parameters
-
+        #y =np.where(y, 1, -1)
         s = self.c
         r = np.zeros(X.shape[0])
         k = 0
@@ -61,9 +61,7 @@ class BrownBoostClassifier:
             h.fit(X, y, sample_weight=w)
             pred = h.predict(X)
             
-            error = np.where(pred==y, 1., -1.) # (pred==y)*2-1)
-            if error.mean() < 0:
-                return self
+            error = np.where(pred==y, 1., -1.)
             gamma = np.dot(w, error)
 
             alpha, t = self.newton_raphson(r, error, s, gamma)
@@ -75,7 +73,6 @@ class BrownBoostClassifier:
 
             r += alpha * error
             s -= t
-
             self.alphas.append(alpha*self.learning_rate)
             self.estimators.append(h)
         return self
@@ -93,11 +90,10 @@ class BrownBoostClassifier:
         y: ndarray
             The pred with BrownBoost for the test instances
         """
-
         y = np.zeros(X.shape[0])
         for i in range(0, len(self.estimators)):
-            y += self.alphas[i] * self.estimators[i].predict(X)
-        return (y > 0).astype(int)
+            y += self.alphas[i] * self.estimators[i].predict(X) 
+        return (y / sum(self.alphas) > 0.5)
 
     def newton_raphson(self, r, error, s, gamma):
         """ Computes alpha and t
@@ -143,7 +139,7 @@ class BrownBoostClassifier:
             E = (erf(d / math.sqrt(self.c)) - erf(a / math.sqrt(self.c))).sum()
 
             sqrt_pi_c = math.sqrt(math.pi * self.c)
-            denominator = 2*(V*W - U*B) + 1e-5
+            denominator = 2*(V*W - U*B) + 1e-10
             alpha_step = (self.c*W*B + sqrt_pi_c*U*E)/denominator
             t_step = (self.c*B*B + sqrt_pi_c*V*E)/denominator
 

@@ -1,5 +1,5 @@
 {
-    "algorithms": ["BrownBoost", "CatBoost", "XGBoost", "LightGBM", "GradientBoosting", "AdaBoost", "MadaBoost"],
+    "algorithms": ["AdaBoost", "MadaBoost", "BrownBoost"],
   
     "estimator": {
       "estimator_type": "stump",
@@ -9,8 +9,8 @@
     "test": {
       "test_size": 0.15,
       "random_state": 42,
-      "N_synthetic_tests": 1,
-      "synthetic_test_n_samples" : 1000,
+      "N_synthetic_tests": 0,
+      "synthetic_test_n_samples" : 2500,
       "multiprocessing" : true,
       "use_predefined_datasets": true,
       "predefined_dataset_paths": [
@@ -20,11 +20,11 @@
   
     "model": {
       "common": {
-        "n_estimators": [50, 75, 100, 150],
-        "learning_rate": [0.01, 0.05, 0.1, 0.2]
+        "n_estimators": [10, 50, 100],
+        "learning_rate": [0.01, 0.1, 1]
       },
       "BrownBoost": {
-        "c": [5, 10, 20],
+        "c": [10, 20, 40],
         "convergence_criterion": [0.0001, 0.001, 0.01]
       },
       "MadaBoost": {},

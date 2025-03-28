@@ -24,15 +24,14 @@ class MadaBoostClassifier:
             pred = h_t.predict(X)
 
             err_t = np.sum(D_t * (pred != y)) + 1e-10
-            if err_t > 0.5:
-                return self
+
             beta_t = np.sqrt(err_t/(1-err_t))
             alpha_t = np.log(1/beta_t)
             
             self.alphas.append(alpha_t*self.learning_rate)
             self.estimators.append(h_t)
 
-            D_t = np.where(D_t*beta_t**(np.where(pred*y,1,-1))<=1/n_samples, D_t*beta_t**(np.where(pred*y,1,-1)), 1/n_samples)
+            D_t = np.where(D_t*beta_t**(np.where(pred*y, 1, -1))<=1/n_samples, D_t*beta_t**(np.where(pred*y, 1, -1)), 1/n_samples)
             D_t /= D_t.sum()
         return self
 
@@ -41,12 +40,12 @@ class MadaBoostClassifier:
         for t in range(self.n_estimators):
             y += self.alphas[t] * self.estimators[t].predict(X)
         if sign:
-            return (y > 0).astype(int)
+            return (y / sum(self.alphas) > 0.5)
         else:
-            return y
+            return y / sum(self.alphas)
         
     def score(self, X, y):
-        return (self.predict(X)==y).sum()/X.shape[0]
+        return (self.predict(X)==y).mean()
     
     def get_params(self, deep=True):
         return {

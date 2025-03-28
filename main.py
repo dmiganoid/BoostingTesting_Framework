@@ -15,7 +15,7 @@ import subprocess
 def run_benchmark(cfg_file):
     config_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        "configs", cfg_file#"cfg.json"
+        "configs", cfg_file
     )
 
     with open(config_path, "r") as file:
@@ -23,7 +23,7 @@ def run_benchmark(cfg_file):
 
     print("=== Starting Boosting Benchmark ===")
 
-    results_path = os.path.join('results', f'{cfg_file.split('.')[0]}-{time()}') 
+    results_path = os.path.join('results', f'{int(time())}-{cfg_file.split('.')[0]}') 
     mkdir(results_path)
 
     algorithms = []
@@ -103,7 +103,7 @@ def main_cli():
     parser = argparse.ArgumentParser(description="BoostingTesting_Framework CLI")
     parser.add_argument(
         "--mode",
-        choices=["generate", "train", "plot"],
+        choices=["generate", "train", "plot", "trainplot"],
         required=True,
         help="Режим работы: generate, train или plot."
     )
@@ -121,7 +121,13 @@ def main_cli():
     elif args.mode == "plot":
         from utils.plotting import plot_mode
         plot_mode()
-        
+    
+    elif args.mode == "trainplot":
+        cfg_file = args.cfg if args.cfg is not None else 'cfg.json'
+        run_benchmark(cfg_file)
+        from utils.plotting import plot_mode
+        plot_mode()
+
     else:
         parser.print_help()
 

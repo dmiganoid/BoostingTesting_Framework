@@ -82,7 +82,7 @@ class FilterBoostClassifier:
         self.alphas = []
         self.estimators = []
         if self.m_t is None:
-            self.m_t = lambda t: X.shape[0]
+            self.m_t = lambda t: X.shape[0] / 4
         
         self.oracle = Oracle(X, np.where(y, 1, -1), self.random_state)
         self.oracle = Oracle(X, y, self.random_state)
@@ -122,7 +122,7 @@ class FilterBoostClassifier:
             return y
         
     def score(self, X, y):
-        return (self.predict(X)==y).sum()/X.shape[0]
+        return (self.predict(X)==y).mean()
     
     def get_params(self, deep=True):
         return {
