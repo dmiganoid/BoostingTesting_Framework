@@ -1,43 +1,46 @@
 {
-    "algorithms": ["AdaBoost", "MadaBoost", "BrownBoost"],
-  
-    "estimator": {
-      "estimator_type": "stump",
-      "estimator_params": { "max_depth": [1] }
+  "algorithms": ["AdaBoost", "MadaBoost", "BrownBoost", "CatBoost", "XGBoost", "LightGBM"],
+  "estimator": {
+    "estimator_type": "stump",
+    "estimator_params": {
+      "max_depth": [1]
+    }
+  },
+  "test": {
+    "test_size": 0.15,
+    "random_state": 42,
+    "N_synthetic_tests": 1,
+    "synthetic_test_n_samples": 1000,
+    "multiprocessing": true,
+    "use_predefined_datasets": true,
+    "predefined_dataset_paths": [
+      "dataset-generated-0.csv"
+    ]
+  },
+  "model": {
+    "common": {
+      "n_estimators": [ 8, 32, 128, 512, 1024 ],
+      "learning_rate": [ 0.001, 0.1 ]
     },
-  
-    "test": {
-      "test_size": 0.15,
-      "random_state": 42,
-      "N_synthetic_tests": 0,
-      "synthetic_test_n_samples" : 2500,
-      "multiprocessing" : true,
-      "use_predefined_datasets": true,
-      "predefined_dataset_paths": [
-        "datasets/dataset-generated-0.csv"
-      ]
+    "BrownBoost": {
+      "c": [4],
+      "convergence_criterion": [0.001],
+      "gpu": true
     },
-  
-    "model": {
-      "common": {
-        "n_estimators": [10, 50, 100],
-        "learning_rate": [0.01, 0.1, 1]
-      },
-      "BrownBoost": {
-        "c": [10, 20, 40],
-        "convergence_criterion": [0.0001, 0.001, 0.01]
-      },
-      "MadaBoost": {},
-  
-      "CatBoost": {
-        "depth": [1]
-      },
-      "XGBoost": {
-        "max_depth": [1]
-      },
-      "LightGBM": {
-        "max_depth": [1]
-      }
+    "MadaBoost": {
+      "gpu": true
+    },
+    "CatBoost": {
+      "depth": [1],
+      "gpu": true
+    },
+    "XGBoost": {
+      "max_depth": [1],
+      "gpu": true
+    },
+    "LightGBM": {
+      "max_depth": [1],
+      "gpu": true
     }
   }
-  
+}

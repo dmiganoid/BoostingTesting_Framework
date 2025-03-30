@@ -41,19 +41,20 @@ def make_param_str(params_dict):
     items = [f"{k}={v}" for k, v in params_dict.items()]
     return ", ".join(items)
 
-def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
+def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
     results_root = "results"
     if not os.path.exists(results_root):
         print("No results folder found.")
         return
 
-    metrics = [
-        "test_accuracy",
-        "train_accuracy",
-        "train_time_sec",
-        "inference_time_sec",
-        ]
-    for time_dir in os.listdir(results_root):
+    if only_dirs is not None and len(only_dirs) > 0:
+        top_level_dirs = [d for d in only_dirs if os.path.isdir(os.path.join(results_root, d))]
+    else:
+        top_level_dirs = [d for d in os.listdir(results_root) if os.path.isdir(os.path.join(results_root, d))]
+
+    metrics = ["test_accuracy","train_accuracy","train_time_sec","inference_time_sec"]
+
+    for time_dir in top_level_dirs:
         time_dir_path = os.path.join(results_root, time_dir)
         if not os.path.isdir(time_dir_path):
             continue
@@ -62,25 +63,26 @@ def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
             test_dir_path = os.path.join(time_dir_path, test_name)
             if not os.path.isdir(test_dir_path):
                 continue
-            
+
             csv_path = os.path.join(test_dir_path, "results.csv")
             if not os.path.exists(csv_path):
                 continue
 
-            df = pd.read_csv(csv_path, sep=",", index_col=0)
-            if df.empty:
+            df = pd.read_csv(csv_path, sep=",")
+            if df.empty or "algorithm" not in df.columns:
                 continue
 
-            df["model_params_dict"] = df["model_params"].apply(parse_params_dict)
-            df["param_str"] = df["model_params_dict"].apply(make_param_str)
-            
+            if "model_params" in df.columns:
+                df["model_params_dict"] = df["model_params"].apply(parse_params_dict)
+            else:
+                df["model_params_dict"] = [{}]*len(df)
+
             plot_subdir = os.path.join(test_dir_path, "plots")
             os.makedirs(plot_subdir, exist_ok=True)
-            other_plots_subdir = os.path.join(test_dir_path, "plots", "other")
+            other_plots_subdir = os.path.join(plot_subdir, "other")
             os.makedirs(other_plots_subdir, exist_ok=True)
 
             algorithms = df["algorithm"].unique()
-
 
             # PARAMETERS
             best_test_accuracy_models = df.loc[[df[df['algorithm'] == algorithm]['test_accuracy'].idxmax() for algorithm in algorithms]]
@@ -151,7 +153,7 @@ def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
                         ax = plt.gca()
                         ax.set_axisbelow(True)
                         plt.grid(True, which='both', linestyle='--', linewidth=0.5, zorder=0)
-                        sns.barplot(data=temp_best, x="algorithm", y=col, hue="param_str",
+                        sns.barplot(data=temp_best, x="algorithm", y=col, hue="param_str" if "param_str" in temp_best.columns else "model_params",
                                     dodge=True, width=0.8, zorder=3)
                         plt.title(f"{algorithm} (Top {best_n} by test_accuracy) - {make_label(col)}\n{test_name}")
                         ax.set_xticks([])
@@ -170,7 +172,7 @@ def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
                         ax = plt.gca()
                         ax.set_axisbelow(True)
                         plt.grid(True, which='both', linestyle='--', linewidth=0.5, zorder=0)
-                        sns.barplot(data=temp_worst, x="algorithm", y=col, hue="param_str",
+                        sns.barplot(data=temp_worst, x="algorithm", y=col, hue="param_str" if "param_str" in temp_worst.columns else "model_params",
                                     dodge=True, width=0.8, zorder=3)
                         plt.title(f"{algorithm} (Worst {worst_n} by test_accuracy) - {make_label(col)}\n{test_name}")
                         ax.set_xticks([])
@@ -190,40 +192,40 @@ def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
                         param_2 = params_to_compare[j]
                         if param_1 not in best_model["model_params_dict"].keys() or param_2 not in best_model["model_params_dict"].keys():
                             continue
-                plot_data = []
-                for _, algorithm_data in df_algorithm.iterrows():
-                    if compare_dicts(algorithm_data["model_params_dict"], best_model["model_params_dict"], 
-                                     [param_1,
-                                      param_2]):
-                        plot_data.append(np.array([algorithm_data['model_params_dict'][param_1], algorithm_data['model_params_dict'][param_2], algorithm_data['train_accuracy'], algorithm_data['test_accuracy']]))
-                plot_data = np.array(plot_data)
-                X = np.unique(plot_data[:, 0])
-                X.sort()
-                Y = np.unique(plot_data[:, 1])
-                Y.sort()
-                Z_train = np.zeros((Y.shape[0], X.shape[0]))
-                Z_test = np.zeros((Y.shape[0], X.shape[0]))
-                for point in plot_data:
-                    Z_train[np.where(Y==point[1]), np.where(X == point[0])] = point[2]
-                    Z_test[np.where(Y==point[1]), np.where(X == point[0])] = point[3]
-                X, Y = np.meshgrid(np.log2(X), np.log2(Y))
-                fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
-                surf = ax.plot_surface(X, Y, Z_test,
-                                    linewidth=0, cmap=cm.coolwarm)
-                plt.title(f"Test Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
-                plt.tight_layout()
-                out_png = os.path.join(plot_subdir, f"{algorithm}-3d-test_accuracy-vs-{param_1}-x-{param_2}.png")
-                plt.savefig(out_png, dpi=150)
-                plt.close()
+                        plot_data = []
+                        for _, algorithm_data in df_algorithm.iterrows():
+                            if compare_dicts(algorithm_data["model_params_dict"], best_model["model_params_dict"], 
+                                            [param_1,
+                                            param_2]):
+                                plot_data.append(np.array([algorithm_data['model_params_dict'][param_1], algorithm_data['model_params_dict'][param_2], algorithm_data['train_accuracy'], algorithm_data['test_accuracy']]))
+                        plot_data = np.array(plot_data)
+                        X = np.unique(plot_data[:, 0])
+                        X.sort()
+                        Y = np.unique(plot_data[:, 1])
+                        Y.sort()
+                        Z_train = np.zeros((Y.shape[0], X.shape[0]))
+                        Z_test = np.zeros((Y.shape[0], X.shape[0]))
+                        for point in plot_data:
+                            Z_train[np.where(Y==point[1]), np.where(X == point[0])] = point[2]
+                            Z_test[np.where(Y==point[1]), np.where(X == point[0])] = point[3]
+                        X, Y = np.meshgrid(np.log2(X), np.log2(Y))
+                        fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                        surf = ax.plot_surface(X, Y, Z_test,
+                                            linewidth=0, cmap=cm.coolwarm)
+                        plt.title(f"Test Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
+                        plt.tight_layout()
+                        out_png = os.path.join(plot_subdir, f"{algorithm}-3d-test_accuracy-vs-{param_1}-x-{param_2}.png")
+                        plt.savefig(out_png, dpi=150)
+                        plt.close()
 
-                fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
-                surf = ax.plot_surface(X, Y, Z_train,
-                                    linewidth=0, cmap=cm.coolwarm)
-                plt.title(f"Train Accuracy vs {param_1}x{param_2}")
-                plt.tight_layout()
-                out_png = os.path.join(plot_subdir, f"{algorithm}-3d-train_accuracy-vs-{param_1}-x-{param_2}.png")
-                plt.savefig(out_png, dpi=150)
-                plt.close()
+                        fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                        surf = ax.plot_surface(X, Y, Z_train,
+                                            linewidth=0, cmap=cm.coolwarm)
+                        plt.title(f"Train Accuracy vs {param_1}x{param_2}")
+                        plt.tight_layout()
+                        out_png = os.path.join(plot_subdir, f"{algorithm}-3d-train_accuracy-vs-{param_1}-x-{param_2}.png")
+                        plt.savefig(out_png, dpi=150)
+                        plt.close()
 
             ### compare top test accuracy models from each class
             fig = plt.figure(figsize=(12, 8))
@@ -282,7 +284,9 @@ def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
 
             
             ### Confusion Matrices for top train accuracy and top test accuracy models from each class
-            if os.path.exists(os.path.join(test_dir_path, 'pred')):
+            pred_dir=os.path.join(test_dir_path,"pred")
+            
+            if os.path.isdir(pred_dir):
                 train_file = os.path.join(test_dir_path, "train-dataset.csv")
                 test_file = os.path.join(test_dir_path, "test-dataset.csv")
                 if not (os.path.exists(train_file) and os.path.exists(test_file)):
@@ -291,55 +295,46 @@ def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
                 test_data = np.genfromtxt(test_file, delimiter=",")
                 y_train = train_data[:, -1]
                 y_test = test_data[:, -1]
-                for algorithm, algorithm_data in best_test_accuracy_models[["file_postfix", "param_str"]].iterrows():
-                    postfix = algorithm_data["file_postfix"]
-                    param_s = algorithm_data["param_str"]
-                    pred_train_file = os.path.join(test_dir_path, 'pred', f"train_{postfix}.csv")
-                    pred_test_file = os.path.join(test_dir_path, 'pred', f"test_{postfix}.csv")
-                    if not (os.path.exists(pred_train_file) and os.path.exists(pred_test_file)):
+
+                for algo_,row_ in best_test_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
+                    postfix=row_["file_postfix"]
+                    pred_train_file=os.path.join(pred_dir,f"train_{postfix}.csv")
+                    pred_test_file=os.path.join(pred_dir,f"test_{postfix}.csv")
+                    if not(os.path.exists(pred_train_file) and os.path.exists(pred_test_file)):
                         continue
-                    y_train_pred = np.genfromtxt(pred_train_file, delimiter=",")
-                    cm_train = confusion_matrix(y_train, y_train_pred)
-                    disp = ConfusionMatrixDisplay(cm_train)
+                    y_train_pred=np.genfromtxt(pred_train_file,delimiter=",")
+                    y_test_pred=np.genfromtxt(pred_test_file,delimiter=",")
+                    cm_train=confusion_matrix(y_train,y_train_pred)
+                    cm_test=confusion_matrix(y_test,y_test_pred)
+                    disp_tr=ConfusionMatrixDisplay(cm_train)
+                    disp_te=ConfusionMatrixDisplay(cm_test)
 
-                    fig = plt.figure(figsize=(12, 8))
-                    plt.axis('off')
-                    plt.title(f"{algorithm} Train Confusion Matrix")
-                    gs = fig.add_gridspec(nrows=10, ncols=10)
-                    axes = [fig.add_subplot(gs[0:9, :]), fig.add_subplot(gs[9:, :])]
-                    axes[0].set_axisbelow(True)
-                    disp.plot(ax=axes[0])
-                    axes[0].grid(visible=False)
-
-                    textstr = f"{algorithm}: {make_param_str(best_model["model_params_dict"])}"
-                    axes[1].text(0, .95, textstr, transform=axes[1].transAxes, linespacing=1.75, verticalalignment='top', horizontalalignment='left',)
-                    axes[1].axis('off')
-
+                    fig=plt.figure(figsize=(12,8))
+                    plt.axis("off")
+                    plt.title(f"{algo_} Train Confusion Matrix")
+                    gs=fig.add_gridspec(nrows=10,ncols=10)
+                    axes=[fig.add_subplot(gs[0:9,:]), fig.add_subplot(gs[9:,:])]
+                    disp_tr.plot(ax=axes[0])
+                    axes[0].grid(False)
+                    textstr=f"{algo_}: {make_param_str(row_['model_params_dict'])}"
+                    axes[1].text(0,0.95,textstr,transform=axes[1].transAxes,linespacing=1.75,va="top",ha="left")
+                    axes[1].axis("off")
                     plt.tight_layout()
-                    out_cm = os.path.join(plot_subdir, f"{algorithm}_cm_train.png")
-                    plt.savefig(out_cm, dpi=150)
+                    plt.savefig(os.path.join(plot_subdir,f"{algo_}_cm_train.png"),dpi=150)
                     plt.close()
 
-
-                    y_test_pred = np.genfromtxt(pred_test_file, delimiter=",")
-                    cm_test = confusion_matrix(y_test, y_test_pred)
-                    disp = ConfusionMatrixDisplay(cm_test)
-
-                    fig = plt.figure(figsize=(12, 8))
-                    plt.axis('off')
-                    plt.title(f"{algorithm} Test Confusion Matrix")
-                    gs = fig.add_gridspec(nrows=10, ncols=10)
-                    axes = [fig.add_subplot(gs[0:9, :]), fig.add_subplot(gs[9:, :])]
-                    axes[0].set_axisbelow(True)
-                    disp.plot(ax=axes[0])
-                    axes[0].grid(visible=False)
-
-                    textstr = f"{algorithm}: {make_param_str(best_model["model_params_dict"])}"
-                    axes[1].text(0, .95, textstr, transform=axes[1].transAxes, linespacing=1.75, verticalalignment='top', horizontalalignment='left',)
-                    axes[1].axis('off')
-
+                    fig=plt.figure(figsize=(12,8))
+                    plt.axis("off")
+                    plt.title(f"{algo_} Test Confusion Matrix")
+                    gs=fig.add_gridspec(nrows=10,ncols=10)
+                    axes=[fig.add_subplot(gs[0:9,:]), fig.add_subplot(gs[9:,:])]
+                    disp_te.plot(ax=axes[0])
+                    axes[0].grid(False)
+                    textstr=f"{algo_}: {make_param_str(row_['model_params_dict'])}"
+                    axes[1].text(0,0.95,textstr,transform=axes[1].transAxes,linespacing=1.75,va="top",ha="left")
+                    axes[1].axis("off")
                     plt.tight_layout()
-                    out_cm = os.path.join(plot_subdir, f"{algorithm}_cm_test.png")
-                    plt.savefig(out_cm, dpi=150)
+                    plt.savefig(os.path.join(plot_subdir,f"{algo_}_cm_test.png"),dpi=150)
                     plt.close()
+                
     print("Done.")

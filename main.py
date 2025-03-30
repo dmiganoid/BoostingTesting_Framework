@@ -42,7 +42,7 @@ def run_benchmark(cfg_file):
     use_predefined = configuration['test'].get('use_predefined_datasets', False)
 
     if use_predefined:
-        predefined_datasets = configuration['test'].get('predefined_datasets', [])
+        predefined_datasets = configuration['test'].get('predefined_dataset_paths', [])
 
         if not predefined_datasets:
             print("WARN: use_predefined_datasets = True, but 'predefined_datasets' empty!")
@@ -102,33 +102,30 @@ def parse_results_to_df(json_path):
 
 def main_cli():
     parser = argparse.ArgumentParser(description="BoostingTesting_Framework CLI")
-    parser.add_argument(
-        "--mode",
-        choices=["generate", "train", "plot", "trainplot"],
-        required=True,
-        help="Режим работы: generate, train или plot."
-    )
-    parser.add_argument('--cfg')
+    parser.add_argument("--mode", choices=["generate", "train", "plot", "trainplot"], required=True)
+    parser.add_argument("--cfg")
+    parser.add_argument("--plot_dirs", nargs='*', default=None, help="Список подпапок в results для построения графиков")
     args = parser.parse_args()
 
     if args.mode == "generate":
         from utils.gen_synt_dataset import DataSetGenerator
         DataSetGenerator()
-    
+
     elif args.mode == "train":
         cfg_file = args.cfg if args.cfg is not None else 'cfg.json'
+        from main import run_benchmark
         run_benchmark(cfg_file)
 
     elif args.mode == "plot":
         from utils.plotting import plot_mode
-        plot_mode()
-    
+        plot_mode(only_dirs=args.plot_dirs)
+
     elif args.mode == "trainplot":
         cfg_file = args.cfg if args.cfg is not None else 'cfg.json'
+        from main import run_benchmark
         run_benchmark(cfg_file)
         from utils.plotting import plot_mode
-        plot_mode()
-
+        plot_mode(only_dirs=args.plot_dirs)
     else:
         parser.print_help()
 

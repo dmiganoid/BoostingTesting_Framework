@@ -14,7 +14,7 @@
     "multiprocessing" : true,
     "use_predefined_datasets": true,
     "predefined_dataset_paths": [
-      "datasets/dataset-generated-0.csv"
+      
     ]
   },
 
