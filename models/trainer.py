@@ -84,10 +84,8 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             from models.brownboost import BrownBoostClassifier
             algorithm_class = BrownBoostClassifier
             param_grid["estimator"] = base_estimators
-            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
             param_grid["c"] = algorithm_config['BrownBoost']['c']
             param_grid["convergence_criterion"] = algorithm_config['BrownBoost']['convergence_criterion']
-            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
 
         case "MadaBoost":
             from models.madaboost import MadaBoostClassifier

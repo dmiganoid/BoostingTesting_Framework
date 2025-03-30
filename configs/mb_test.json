@@ -10,7 +10,6 @@
     "test_size": 0.15,
     "random_state": 42,
     "N_synthetic_tests": 1,
-    "synthetic_tests_n_samples": 1000,
     "multiprocessing" : true,
     "use_predefined_datasets": true,
     "predefined_dataset_paths": [
@@ -20,9 +19,23 @@
 
   "model": {
     "common": {
-      "n_estimators": [ 2, 4, 8, 64, 128, 256],
-      "learning_rate": [ 0.001, 0.01, 0.1, 0.2, 1]
+      "n_estimators": [ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024 ],
+      "learning_rate": [0.032, 0.064, 0.128, 0.256, 0.512, 1, 5, 20]
     },
-    "MadaBoost": {}
+    "BrownBoost": {
+      "c": [5, 10, 15, 25, 30, 100],
+      "convergence_criterion": [0.0001, 0.001, 0.01, 0.1]
+    },
+    "MadaBoost": {},
+
+    "CatBoost": {
+      "depth": [1]
+    },
+    "XGBoost": {
+      "max_depth": [1]
+    },
+    "LightGBM": {
+      "max_depth": [1]
+    }
   }
 }

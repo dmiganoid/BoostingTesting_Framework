@@ -8,7 +8,7 @@ import copy as cp
 
 
 class BrownBoostClassifier:
-    def __init__(self, estimator=None, c=10, convergence_criterion=0.0001, n_estimators=100, learning_rate=1, random_state=None):
+    def __init__(self, estimator=None, c=4, convergence_criterion=0.001, max_estimators=200_000, random_state=None):
         """ Initiates BrownBoost classifier
         
         Parameters
@@ -24,10 +24,9 @@ class BrownBoostClassifier:
         """
         self.estimator = estimator
         self.c = c
-        self.n_estimators = n_estimators
-        self.max_iter_newton_raphson = 10000
+        self.max_estimators = max_estimators
+        self.max_iter_newton_raphson = 100
         self.convergence_criterion = convergence_criterion
-        self.learning_rate = learning_rate
         self.alphas = []
         self.estimators = []
         self.random_state = random_state
@@ -48,11 +47,10 @@ class BrownBoostClassifier:
         self.alphas = []
         self.estimators = []
         # Initiate parameters
-        #y =np.where(y, 1, -1)
         s = self.c
         r = np.zeros(X.shape[0])
         k = 0
-        while s >= 0 and k < self.n_estimators :
+        while s >= 0 and k < self.max_estimators:
 #             print(f'iter is {k}\ts = {s}')
             k += 1
             w = np.exp(-(r + s)**2 / self.c)
@@ -65,6 +63,8 @@ class BrownBoostClassifier:
             gamma = np.dot(w, error)
 
             alpha, t = self.newton_raphson(r, error, s, gamma)
+
+
 #             theta = (0.1/self.c)**2
 #             A = 32 * math.sqrt(self.c*math.log(2/theta))
 #             if t < gamma**2/A:
@@ -73,7 +73,7 @@ class BrownBoostClassifier:
 
             r += alpha * error
             s -= t
-            self.alphas.append(alpha*self.learning_rate)
+            self.alphas.append(alpha)
             self.estimators.append(h)
         return self
     
@@ -158,17 +158,15 @@ class BrownBoostClassifier:
         return {
             "convergence_criterion" : self.convergence_criterion,
             "c" : self.c,
-            "n_estimators" : self.n_estimators,
+            "max_estimators" : self.max_estimators,
             "estimator" : self.estimator,
-            "learning_rate" : self.learning_rate,
             "random_state" : self.random_state
              }
     
     def set_params(self, **params):
         self.estimator = params.get("estimator", self.estimator)
         self.c = params.get("c", self.c)
-        self.n_estimators = params.get("n_estimators", self.n_estimators)
+        self.max_estimators = params.get("max_estimators", self.max_estimators)
         self.convergence_criterion = params.get("convergence_criterion", self.convergence_criterion)
-        self.learning_rate = params.get("learning_rate", self.learning_rate)
         self.random_state = params.get("random_state", self.random_state)
         return self

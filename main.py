@@ -42,19 +42,20 @@ def run_benchmark(cfg_file):
     use_predefined = configuration['test'].get('use_predefined_datasets', False)
 
     if use_predefined:
-        predefined_paths = configuration['test'].get('predefined_dataset_paths', [])
+        predefined_datasets = configuration['test'].get('predefined_datasets', [])
 
-        if not predefined_paths:
-            print("WARN: use_predefined_datasets = True, but 'predefined_dataset_paths' empty!")
-        for i, csv_path in enumerate(predefined_paths):
-            csv_full_path = os.path.join(os.path.dirname(__file__), csv_path)
+        if not predefined_datasets:
+            print("WARN: use_predefined_datasets = True, but 'predefined_datasets' empty!")
+        for dataset_name in predefined_datasets:
+
+            csv_full_path = os.path.join(os.path.dirname(__file__), "datasets", dataset_name)
             if not os.path.exists(csv_full_path):
                 print(f"Not found: {csv_full_path}")
                 continue
             data = np.genfromtxt(csv_full_path, delimiter=",")
             X, y = data[:, :-1], data[:, -1]
 
-            test_name = f"predefined-{i}"
+            test_name = f"{dataset_name}"
 
             trainer.fit_and_evaluate(
                 X, y,

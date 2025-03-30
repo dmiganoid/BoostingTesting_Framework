@@ -6,15 +6,17 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.patches as mplpatches
+from matplotlib import cm
+
 sns.set_theme(style="whitegrid", palette="deep")
 plt.rc("axes", titlesize=16, labelsize=14)
 plt.rc("xtick", labelsize=12)
 plt.rc("ytick", labelsize=12)
 
 
-def compare_dicts(dict_1 : dict, dict_2 : dict, ignored : str):
+def compare_dicts(dict_1 : dict, dict_2 : dict, ignored : list):
     for key in dict_1.keys():
-        if key != ignored and dict_1[key] != dict_2[key]:
+        if key not in ignored and dict_1[key] != dict_2[key]:
             return False
     return True
 
@@ -85,25 +87,25 @@ def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
             best_test_accuracy_models.set_index('algorithm', inplace=True)
             best_train_accuracy_models = df.loc[[df[df['algorithm'] == algorithm]['train_accuracy'].idxmax() for algorithm in algorithms]]
             best_train_accuracy_models.set_index('algorithm', inplace=True)
-            params_to_compare = ["n_estimators", "learning_rate", "c", "convergence_criterion", "delta", "epsilon", "tau", ]
+            params_to_compare = ["n_estimators", "learning_rate", "c", "delta", "epsilon", "tau",'iterations' ]
 
 
             for algorithm in algorithms:
+                best_model = best_test_accuracy_models.loc[algorithm]
+                df_algorithm = df[df["algorithm"] == algorithm]
                 ### line plots for the best test accuracy models
                 for param in params_to_compare:
-                    best_model = best_test_accuracy_models.loc[algorithm]
                     if param not in best_model["model_params_dict"].keys():
                         continue
                     x_data = []
                     y_test_data = []
                     y_train_data = []
-                    for _, algorithm_data in df[df['algorithm']==algorithm].iterrows():
-                        if compare_dicts(algorithm_data["model_params_dict"], best_model["model_params_dict"], param):
+                    for _, algorithm_data in df_algorithm.iterrows():
+                        if compare_dicts(algorithm_data["model_params_dict"], best_model["model_params_dict"], [param]):
                             x_data.append(algorithm_data['model_params_dict'][param])
                             y_train_data.append(algorithm_data['train_accuracy'])
                             y_test_data.append(algorithm_data['test_accuracy'])
 
-                    # sorting not required if config params are in non-descending order 
                     sort_ind = np.argsort(x_data, axis=0)
                     x_data = np.take_along_axis(np.array(x_data), sort_ind, axis=0)
                     y_train_data = np.take_along_axis(np.array(y_train_data), sort_ind, axis=0)
@@ -136,8 +138,8 @@ def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
                     plt.savefig(out_png, dpi=150)
                     plt.close()
 
-
-                    sub_df = df[df["algorithm"] == algorithm]
+                    # rewrite
+                    sub_df = df_algorithm
                     sub_df_sorted = sub_df.sort_values("test_accuracy", ascending=False)
                     best_sub_df = sub_df_sorted.head(best_n).copy()
                     worst_sub_df = sub_df_sorted.tail(worst_n).copy()
@@ -180,6 +182,48 @@ def plot_mode(best_n=5, worst_n=5, best_k_per_algo=2):
                         out_png = os.path.join(other_plots_subdir, f"{algorithm}_{col}_worst{worst_n}.png")
                         plt.savefig(out_png, dpi=150)
                         plt.close()            
+
+                # <needs work> 3d plot test_accuracy vs (learning_rate x n_estimators) for best_models
+                for i in range(len(params_to_compare)-1):
+                    for j in range(i+1, len(params_to_compare)):
+                        param_1 = params_to_compare[i]
+                        param_2 = params_to_compare[j]
+                        if param_1 not in best_model["model_params_dict"].keys() or param_2 not in best_model["model_params_dict"].keys():
+                            continue
+                plot_data = []
+                for _, algorithm_data in df_algorithm.iterrows():
+                    if compare_dicts(algorithm_data["model_params_dict"], best_model["model_params_dict"], 
+                                     [param_1,
+                                      param_2]):
+                        plot_data.append(np.array([algorithm_data['model_params_dict'][param_1], algorithm_data['model_params_dict'][param_2], algorithm_data['train_accuracy'], algorithm_data['test_accuracy']]))
+                plot_data = np.array(plot_data)
+                X = np.unique(plot_data[:, 0])
+                X.sort()
+                Y = np.unique(plot_data[:, 1])
+                Y.sort()
+                Z_train = np.zeros((Y.shape[0], X.shape[0]))
+                Z_test = np.zeros((Y.shape[0], X.shape[0]))
+                for point in plot_data:
+                    Z_train[np.where(Y==point[1]), np.where(X == point[0])] = point[2]
+                    Z_test[np.where(Y==point[1]), np.where(X == point[0])] = point[3]
+                X, Y = np.meshgrid(np.log2(X), np.log2(Y))
+                fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                surf = ax.plot_surface(X, Y, Z_test,
+                                    linewidth=0, cmap=cm.coolwarm)
+                plt.title(f"Test Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
+                plt.tight_layout()
+                out_png = os.path.join(plot_subdir, f"{algorithm}-3d-test_accuracy-vs-{param_1}-x-{param_2}.png")
+                plt.savefig(out_png, dpi=150)
+                plt.close()
+
+                fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                surf = ax.plot_surface(X, Y, Z_train,
+                                    linewidth=0, cmap=cm.coolwarm)
+                plt.title(f"Train Accuracy vs {param_1}x{param_2}")
+                plt.tight_layout()
+                out_png = os.path.join(plot_subdir, f"{algorithm}-3d-train_accuracy-vs-{param_1}-x-{param_2}.png")
+                plt.savefig(out_png, dpi=150)
+                plt.close()
 
             ### compare top test accuracy models from each class
             fig = plt.figure(figsize=(12, 8))

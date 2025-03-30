@@ -1,5 +1,5 @@
 {
-    "algorithms": ["CatBoost", "XGBoost", "LightGBM", "GradientBoosting", "AdaBoost", "MadaBoost", "BrownBoost"],
+    "algorithms": ["CatBoost", "XGBoost", "LightGBM", "GradientBoosting", "AdaBoost", "BrownBoost"],
   
     "estimator": {
       "estimator_type": "stump",
@@ -12,9 +12,8 @@
       "N_synthetic_tests": 1,
       "multiprocessing" : true,
       "use_predefined_datasets": true,
-      "predefined_dataset_paths": [
-        "datasets/dataset-generated-0.csv"
-      ]
+      "predefined_dataset_paths":
+        "dataset-generated-0.csv"
     },
   
     "model": {
@@ -23,8 +22,8 @@
         "learning_rate": [ 0.001, 0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1]
       },
       "BrownBoost": {
-        "c": [5, 10, 15, 25, 30, 100],
-        "convergence_criterion": [0.0001, 0.001, 0.01, 0.1]
+        "c": [ 0.25, 0.5, 0.75, 1, 2, 4],
+        "convergence_criterion": [0.001]
       },
       "MadaBoost": {},
   
@@ -36,6 +35,11 @@
       },
       "LightGBM": {
         "max_depth": [1]
+      },
+      "FilterBoost": {
+        "epsilon" : [0.05],
+        "delta" : [0.9],
+        "tau" : [0.1]
       }
     }
   }

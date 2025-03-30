@@ -14,24 +14,29 @@ class MadaBoostClassifier:
 
     def fit(self, X, y):
         self.alphas = []
-        self.hs = []
+        self.estimators = []
         n_samples = X.shape[0]
+
         D_t = np.ones(n_samples) / n_samples
+
         for t in range(self.n_estimators):
 
             h_t = cp.deepcopy(self.estimator)
             h_t.fit(X, y, sample_weight=D_t)
             pred = h_t.predict(X)
 
-            err_t = np.sum(D_t * (pred != y)) + 1e-10
-
-            beta_t = np.sqrt(err_t/(1-err_t))
-            alpha_t = np.log(1/beta_t)
             
-            self.alphas.append(alpha_t*self.learning_rate)
+            err_t = np.sum(D_t * (pred != y)) - 1e-10
+                
+            alpha_t = self.learning_rate * 0.5 * np.log((1-err_t)/err_t)
+            beta_t = np.exp(-alpha_t)
+            
+            self.alphas.append(alpha_t)
             self.estimators.append(h_t)
 
-            D_t = np.where(D_t*beta_t**(np.where(pred*y, 1, -1))<=1/n_samples, D_t*beta_t**(np.where(pred*y, 1, -1)), 1/n_samples)
+            D_t = np.where(D_t*np.power(beta_t, np.where(pred*y, 1, -1)) <= 1/n_samples, 
+                           D_t*np.power(beta_t, np.where(pred*y, 1, -1)),
+                           1/n_samples)
             D_t /= D_t.sum()
         return self
 
