@@ -20,7 +20,7 @@ class DataSetGenerator:
             ax=self.N_samples_ax,
             label='N samples for control point',
             valmin=5,
-            valmax=100,
+            valmax=500,
             valinit=init_N,
             valstep=1,
         )
@@ -180,7 +180,7 @@ class DataSetGenerator:
             self.X_control_points_scatter = self.ax.scatter([], [])
 
         if self.bspline_x is not None and self.bspline_y is not None and len(self.X) != 0:
-            labels = np.zeros(self.X.shape[0])
+            self.labels = np.zeros(self.X.shape[0])
             dist = lambda t,x,y: (x-self.bspline_x(t))**2 + (y-self.bspline_y(t))**2
             for i in range(self.X.shape[0]):
                 x, y = self.X[i]
@@ -196,11 +196,11 @@ class DataSetGenerator:
                 elif t0 == self.t_interval[1]:
                     t = minimize(dist, args=(x,y), x0=self.t_interval[0], bounds=[self.t_interval]).x[0]
                     t0 = t if dist(t, x, y) <= dist(t0, x, y) else t0
-                labels[i] = (self.bspline_x.derivative()(t0)*(y-self.bspline_y(t0)) - self.bspline_y.derivative()(t0)* (x-self.bspline_x(t0))>=0)
+                self.labels[i] = (self.bspline_x.derivative()(t0)*(y-self.bspline_y(t0)) - self.bspline_y.derivative()(t0)* (x-self.bspline_x(t0))>=0)
                 #ax.set_aspect('equal')
                 #ax.plot((x, bspline_x(t0)), (y, bspline_y(t0)))
             
-            self.samples_scatter.set_color(c=np.where(labels, 'blue', 'black'))
+            self.samples_scatter.set_color(c=np.where(self.labels, 'blue', 'black'))
         self.fig.canvas.draw_idle()
 
 
@@ -208,7 +208,7 @@ class DataSetGenerator:
         i = 0
         while os.path.exists(f"{path}/dataset-generated-{i}.csv"):
             i+=1
-        np.savetxt(f"{path}/dataset-generated-{i}.csv", np.column_stack((self.X, self.labels.astype(int))), delimiter=",")
+        np.savetxt(f"{path}/dataset-generated-{i}.csv", np.column_stack((self.X, np.array(self.labels).T.astype(int))), delimiter=",")
 
 if __name__=="__main__":
     DataSetGenerator()

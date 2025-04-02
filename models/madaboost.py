@@ -1,8 +1,8 @@
 import numpy as np
-import copy as cp
-import cupy as cpx
+import copy
 
 try:
+    import cupy as cpx
     from cuml.tree import DecisionTreeClassifier as GPUDecisionTree
 except:
     GPUDecisionTree = None
@@ -26,7 +26,7 @@ class MadaBoostClassifier:
 
         for t in range(self.n_estimators):
 
-            h_t = cp.deepcopy(self.estimator)
+            h_t = copy.deepcopy(self.estimator)
             h_t.fit(X, y, sample_weight=D_t)
             pred = h_t.predict(X)
 
@@ -91,7 +91,7 @@ class MadaBoostClassifierGPU:
         self.estimators = []
         for _ in range(self.n_estimators):
             if GPUDecisionTree and isinstance(self.estimator, GPUDecisionTree):
-                h = cp.deepcopy(self.estimator)
+                h = copy.deepcopy(self.estimator)
                 h.fit(xg, yg, sample_weight=D_t)
                 p = h.predict(xg)
                 p = (p > 0.5).astype(cpx.float32)
@@ -101,7 +101,7 @@ class MadaBoostClassifierGPU:
                 p = h.predict(xg)
                 p = (p > 0.5).astype(cpx.float32)
             else:
-                h = cp.deepcopy(self.estimator)
+                h = copy.deepcopy(self.estimator)
                 h.fit(cpx.asnumpy(xg), cpx.asnumpy(yg),
                       sample_weight=cpx.asnumpy(D_t))
                 p = cpx.asarray(h.predict(cpx.asnumpy(xg)))

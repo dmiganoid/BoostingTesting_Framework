@@ -4,11 +4,11 @@
 import math
 import numpy as np
 from scipy.special import erf
-import cupy as cp
-from cupyx.scipy.special import erf as cp_erf
 import copy
 
 try:
+    import cupy as cp
+    from cupyx.scipy.special import erf as cp_erf
     from cuml.tree import DecisionTreeClassifier as GPUDecisionTree
 except ImportError:
     GPUDecisionTree = None
@@ -62,7 +62,7 @@ class BrownBoostClassifier:
             k += 1
             w = np.exp(-(r + s)**2 / self.c)
 
-            h = cp.deepcopy(self.estimator)
+            h = copy.deepcopy(self.estimator)
             h.fit(X, y, sample_weight=w)
             pred = h.predict(X)
 

@@ -112,28 +112,24 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                     x_data = np.take_along_axis(np.array(x_data), sort_ind, axis=0)
                     y_train_data = np.take_along_axis(np.array(y_train_data), sort_ind, axis=0)
                     y_test_data = np.take_along_axis(np.array(y_test_data), sort_ind, axis=0)
-
+                    if x_data.shape[0] < 2:
+                        continue
                     fig = plt.figure(figsize=(12, 8))
+                    ax = plt.gca()
                     plt.axis('off')
                     plt.title(f"Test Accuracy vs {param}")
-                    gs = fig.add_gridspec(nrows=10, ncols=10)
-                    axes = [fig.add_subplot(gs[0:9, :]), fig.add_subplot(gs[9:, :])]
 
-                    axes[0].set_axisbelow(True)
-                    axes[0].grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
-                    axes[0].plot(x_data, y_train_data, 'r', marker="o", label="Train")
-                    axes[0].plot(x_data, y_test_data, 'b', marker="o", label="Test")
+                    ax.set_axisbelow(True)
+                    ax.grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
+                    ax.plot(x_data, y_train_data, 'r', marker="o", label="Train")
+                    ax.plot(x_data, y_test_data, 'b', marker="o", label="Test")
 
                     if x_data.max() / x_data.min() > 100:
-                        axes[0].set_xscale('log')
-                    axes[0].set_xlabel(make_label(param))
-                    axes[0].set_ylabel("Train Accuracy")
-                    axes[0].set_ylim(bottom=y_test_data.min()*0.95, top=y_train_data.max()*1.05)
-                    axes[0].legend()
-
-                    textstr = f"{algorithm}: {make_param_str(best_model["model_params_dict"])}"
-                    axes[1].text(0, .95, textstr, transform=axes[1].transAxes, linespacing=1.75, verticalalignment='top', horizontalalignment='left',)
-                    axes[1].axis('off')
+                        ax.set_xscale('log')
+                    ax.set_xlabel(make_label(param))
+                    ax.set_ylabel("Train Accuracy")
+                    ax.set_ylim(bottom=y_test_data.min()*0.95, top=y_train_data.max()*1.05)
+                    ax.legend()
 
                     plt.tight_layout()
                     out_png = os.path.join(plot_subdir, f"{algorithm}-line_accuracy-vs-{param}.png")
@@ -203,6 +199,8 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                         X.sort()
                         Y = np.unique(plot_data[:, 1])
                         Y.sort()
+                        if X.shape[0] < 3 or Y.shape[0] < 3:
+                            continue
                         Z_train = np.zeros((Y.shape[0], X.shape[0]))
                         Z_test = np.zeros((Y.shape[0], X.shape[0]))
                         for point in plot_data:
@@ -295,11 +293,13 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                 test_data = np.genfromtxt(test_file, delimiter=",")
                 y_train = train_data[:, -1]
                 y_test = test_data[:, -1]
+                X_train = train_data[:, :-1]
+                X_test = test_data[:, :-1]
 
                 for algo_,row_ in best_test_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
                     postfix=row_["file_postfix"]
                     pred_train_file=os.path.join(pred_dir,f"train_{postfix}.csv")
-                    pred_test_file=os.path.join(pred_dir,f"test_{postfix}.csv")
+                    pred_test_file=os.path.join(pred_dir,f"test_{postfix}.csv")   
                     if not(os.path.exists(pred_train_file) and os.path.exists(pred_test_file)):
                         continue
                     y_train_pred=np.genfromtxt(pred_train_file,delimiter=",")
@@ -312,29 +312,44 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                     fig=plt.figure(figsize=(12,8))
                     plt.axis("off")
                     plt.title(f"{algo_} Train Confusion Matrix")
-                    gs=fig.add_gridspec(nrows=10,ncols=10)
-                    axes=[fig.add_subplot(gs[0:9,:]), fig.add_subplot(gs[9:,:])]
-                    disp_tr.plot(ax=axes[0])
-                    axes[0].grid(False)
-                    textstr=f"{algo_}: {make_param_str(row_['model_params_dict'])}"
-                    axes[1].text(0,0.95,textstr,transform=axes[1].transAxes,linespacing=1.75,va="top",ha="left")
-                    axes[1].axis("off")
+                    ax = plt.gca()
+                    disp_tr.plot(ax=ax)
+                    ax.grid(False)
                     plt.tight_layout()
                     plt.savefig(os.path.join(plot_subdir,f"{algo_}_cm_train.png"),dpi=150)
                     plt.close()
 
                     fig=plt.figure(figsize=(12,8))
+                    ax = plt.gca()
                     plt.axis("off")
                     plt.title(f"{algo_} Test Confusion Matrix")
-                    gs=fig.add_gridspec(nrows=10,ncols=10)
-                    axes=[fig.add_subplot(gs[0:9,:]), fig.add_subplot(gs[9:,:])]
-                    disp_te.plot(ax=axes[0])
-                    axes[0].grid(False)
-                    textstr=f"{algo_}: {make_param_str(row_['model_params_dict'])}"
-                    axes[1].text(0,0.95,textstr,transform=axes[1].transAxes,linespacing=1.75,va="top",ha="left")
-                    axes[1].axis("off")
+                    disp_te.plot(ax=ax)
+                    ax.grid(False)
                     plt.tight_layout()
                     plt.savefig(os.path.join(plot_subdir,f"{algo_}_cm_test.png"),dpi=150)
                     plt.close()
+
+                    fig, axes = plt.subplots(1, 2, figsize=(24,8))
+                    fig.suptitle(f"{algo_} Train and Test Predictions")
+                    true_train_preds = np.where(y_train==y_train_pred)
+                    true_test_preds = np.where(y_test==y_test_pred)
+                    false_train_preds = np.where(y_train!=y_train_pred)
+                    false_test_preds =  np.where(y_test!=y_test_pred)
+                    axes[0].scatter(x=X_train[true_train_preds, 0], y=X_train[true_train_preds, 1], c=np.where(y_train[true_train_preds], 'r', 'b'), marker='+', s=12, label="Correct")
+                    axes[0].scatter(x=X_train[false_train_preds, 0], y=X_train[false_train_preds, 1], c=np.where(y_train[false_train_preds], 'r', 'b'), marker='x', label="Incorrect")
+                    axes[0].grid(False)
+                    axes[0].set_title("Train")
+                    axes[1].scatter(x=X_test[true_test_preds, 0], y=X_test[true_test_preds, 1], c=np.where(y_test[true_test_preds], 'r', 'b'), marker='+', s=12, label="Correct")
+                    axes[1].scatter(x=X_test[false_test_preds, 0], y=X_test[false_test_preds, 1], c=np.where(y_test[false_test_preds], 'r', 'b'), marker='x', label="Incorrect")
+                    
+                    axes[1].grid(False)
+                    axes[1].set_title("Test")
+                    plt.legend()
+                    plt.tight_layout()
+                    plt.savefig(os.path.join(plot_subdir,f"{algo_}_train-test-preds.png"),dpi=150)
+                    plt.close()
                 
     print("Done.")
+
+if __name__ == "__main__":
+    plot_mode()
