@@ -34,42 +34,35 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
     }
 
 def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state):
-    from sklearn.tree import DecisionTreeClassifier
-    from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier
-    try:
-        from xgboost import XGBClassifier
-    except:
-        XGBClassifier = None
-    try:
-        from catboost import CatBoostClassifier
-    except:
-        CatBoostClassifier = None
-    try:
-        from lightgbm import LGBMClassifier
-    except:
-        LGBMClassifier = None
-    from models.brownboost import get_brownboost_class
-    from models.madaboost import get_madaboost_class
-    from models.filterboost import FilterBoostClassifier
-    from sklearn.model_selection import ParameterGrid
     base_estimators = []
-    if base_estimator_cfg['estimator_type'] == "stump":
-        for p in ParameterGrid(base_estimator_cfg['estimator_params']):
-            base_estimators.append(DecisionTreeClassifier(**p))
-    param_grid = {}
+    match base_estimator_cfg['estimator_type']:
+        case "stump":
+            from sklearn.tree import DecisionTreeClassifier
+            for params in ParameterGrid(base_estimator_cfg['estimator_params']):
+                base_estimators.append(DecisionTreeClassifier(**params))
+        case "neural_network":
+            from neural_classifier import NeuralBinaryClassifier
+            for params in ParameterGrid(base_estimator_cfg['estimator_params']):
+                base_estimators.append(NeuralBinaryClassifier(**params))
+
+    param_grid = dict()
     algorithm_class = None
     match algorithm:
         case "AdaBoost":
+            from sklearn.ensemble import AdaBoostClassifier
             algorithm_class = AdaBoostClassifier
             param_grid["estimator"] = base_estimators
-            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
-            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-            param_grid["algorithm"] = ["SAMME"]
-        case "GradientBoost":
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+            param_grid["algorithm"] = ['SAMME']
+
+        # No estimator for GradientBoosting
+        case "GradientBoosting":
+            from sklearn.ensemble import GradientBoostingClassifier
             algorithm_class = GradientBoostingClassifier
-            param_grid["loss"] = ["exponential"]
-            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
-            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+            param_grid["loss"] = ['log_loss']
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
         case "BrownBoost":
             from models.brownboost import BrownBoostClassifier, BrownBoostClassifierGPU
             gpu = algorithm_config["BrownBoost"].get("gpu", False)
@@ -85,73 +78,100 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-        case "FilterBoost":
-            algorithm_class = FilterBoostClassifier
+
+        case "WaterBoost":
+            from models.waterboost import WaterBoostClassifier
+            algorithm_class = WaterBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-            param_grid["epsilon"] = algorithm_config["FilterBoost"]["epsilon"]
-            param_grid["delta"] = algorithm_config["FilterBoost"]["delta"]
-            param_grid["tau"] = algorithm_config["FilterBoost"]["tau"]
+
+        case "WaterBoostLimited":
+            from models.waterboost import WaterBoostClassifier_limited
+            algorithm_class = WaterBoostClassifier_limited
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
+        case "FilterBoost":
+            from models.filterboost import FilterBoostClassifier
+            algorithm_class = FilterBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+            param_grid["epsilon"] = algorithm_config['FilterBoost']['epsilon']
+            param_grid["delta"] = algorithm_config['FilterBoost']['delta']
+            param_grid["tau"] = algorithm_config['FilterBoost']['tau']
+
+        # No estimator for CatBoost
         case "CatBoost":
-            if CatBoostClassifier:
-                algorithm_class = CatBoostClassifier
-                param_grid["allow_writing_files"] = [False]
-                param_grid["silent"] = [True]
-                param_grid["iterations"] = algorithm_config["common"]["n_estimators"]
-                param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-                param_grid["depth"] = algorithm_config["CatBoost"]["depth"]
-                if algorithm_config["CatBoost"].get("gpu", False):
-                    param_grid["task_type"] = ["GPU"]
+            from catboost import CatBoostClassifier
+            algorithm_class = CatBoostClassifier
+            param_grid['allow_writing_files'] = [False]
+            param_grid['silent'] = [True]
+            param_grid["iterations"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+            param_grid["depth"] = algorithm_config['CatBoost']['depth']
+
+        # No estimator for XGBoost
         case "XGBoost":
-            if XGBClassifier:
-                algorithm_class = XGBClassifier
-                param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
-                param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-                param_grid["max_depth"] = algorithm_config["XGBoost"]["max_depth"]
-                param_grid["use_label_encoder"] = [False]
-                param_grid["eval_metric"] = ["logloss"]
-                param_grid["verbosity"] = [0]
-                if algorithm_config["XGBoost"].get("gpu", False):
-                    param_grid["tree_method"] = ["gpu_hist"]
+            from xgboost import XGBClassifier
+            algorithm_class = XGBClassifier
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+            param_grid["max_depth"] = algorithm_config['XGBoost']['max_depth']
+            param_grid["use_label_encoder"] = [False]
+            param_grid["eval_metric"] = ["logloss"]
+            param_grid['verbosity'] = [0]
+
+        # No estimator for LightGBM
         case "LightGBM":
-            if LGBMClassifier:
-                algorithm_class = LGBMClassifier
-                param_grid["verbose"] = [-1]
-                param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
-                param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-                param_grid["max_depth"] = algorithm_config["LightGBM"]["max_depth"]
-                if algorithm_config["LightGBM"].get("gpu", False):
-                    param_grid["device_type"] = ["gpu"]
+            from lightgbm import LGBMClassifier
+            algorithm_class = LGBMClassifier
+            param_grid['verbose'] = [-1]
+            param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
+            param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+            param_grid["max_depth"] = algorithm_config['LightGBM']['max_depth']
+
+        # <TODO find way to implement different base estimators for CatBoost, XGBoost, LightGBM>
+
+
     return (algorithm_class, param_grid)
 
 class BoostingBenchmarkTrainer:
-    def __init__(self, algorithms):
-        self.algorithms = algorithms
+
+    def __init__(self, algorithms_data):
+        self.algorithms_data = algorithms_data
+
     def fit_and_evaluate(self, X, y, random_state=None, test_size=0.15, results_path="results", test_name="test", multiprocessing=True):
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
-        os.makedirs(os.path.join(results_path, test_name), exist_ok=True)
-        np.savetxt(os.path.join(results_path, test_name, 'train-dataset.csv'), np.column_stack((X_train, y_train)), delimiter=",")
-        np.savetxt(os.path.join(results_path, test_name, 'test-dataset.csv'), np.column_stack((X_test, y_test)), delimiter=",")
         results = []
+        X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size)   
+        print(f"== Starting {test_name} ==")
+        os.mkdir(os.path.join(results_path,test_name))
+        np.savetxt(os.path.join(results_path,test_name,'train-dataset.csv'), np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
+        np.savetxt(os.path.join(results_path,test_name,'test-dataset.csv'), np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
+        save_predictions = ('random' not in test_name)
+        if save_predictions:
+            os.mkdir(os.path.join(results_path, test_name, 'pred'))
         if multiprocessing:
-            c = cpu_count(logical=False)
-            pool = Pool(processes=c)
-            tasks = []
-            for ac, pg in self.algorithms:
-                if ac is None:
-                    continue
-                for ind, p in enumerate(ParameterGrid(pg)):
-                    tasks.append(pool.apply_async(train_test_model, (ac, p, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name)), {"ind": ind, "random_state": random_state}))
-            for t in tasks:
-                results.append(t.get())
-            pool.close()
-            pool.join()
+            cpus = cpu_count(logical=False)
+            if type(multiprocessing) is int:
+                cpus = multiprocessing
+            with Pool(processes=cpus) as pool:
+                tasks = []
+                for algorithm_class, algorithm_param_grid in self.algorithms_data:
+                    print(f"= Testing {algorithm_class.__name__} =")
+                    for ind, params in enumerate(ParameterGrid(algorithm_param_grid)):
+                        tasks.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name)], kwds={"ind" : ind, "random_state" : random_state, "save_predictions" : save_predictions}))           
+                for t in tasks:
+                    results.append(t.get(timeout=None))
         else:
-            for ac, pg in self.algorithms:
-                if ac is None:
-                    continue
-                for ind, p in enumerate(ParameterGrid(pg)):
-                    results.append(train_test_model(ac, p, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name), ind=ind, random_state=random_state))
+            for algorithm_class, algorithm_param_grid in self.algorithms_data:
+                print(f"= Testing {algorithm_class.__name__} =")
+                for ind, params in enumerate(ParameterGrid(algorithm_param_grid)):
+                    results.append(train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name), ind=ind, random_state=random_state, save_predictions=save_predictions))
+        
+        print("= Writing results =")
         pd.DataFrame(results).to_csv(os.path.join(results_path, test_name, 'results.csv'), index=False, sep=",")
+        print(f"== Finished {test_name} ==")
         return 0

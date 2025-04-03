@@ -26,9 +26,9 @@ def run_benchmark(cfg_file):
     results_path = os.path.join('results', f'{int(time())}-{cfg_file.split('.')[0]}') 
     mkdir(results_path)
 
-    algorithms = []
+    algorithms_data = []
     for algorithm in configuration['algorithms']:
-        algorithms.append(
+        algorithms_data.append(
             load_algorithm(
                 algorithm=algorithm,
                 algorithm_config=configuration['model'],
@@ -36,8 +36,7 @@ def run_benchmark(cfg_file):
                 random_state=configuration['test']['random_state']
             )
         )
-
-    trainer = BoostingBenchmarkTrainer(algorithms=algorithms)
+    trainer = BoostingBenchmarkTrainer(algorithms_data=algorithms_data)
 
     use_predefined = configuration['test'].get('use_predefined_datasets', False)
 

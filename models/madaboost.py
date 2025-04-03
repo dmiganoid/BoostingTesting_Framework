@@ -8,6 +8,7 @@ except:
     GPUDecisionTree = None
 
 
+
 class MadaBoostClassifier:
     def __init__(self, estimator=None, n_estimators=500, learning_rate=1, random_state=None):
         self.n_estimators = n_estimators
@@ -20,10 +21,12 @@ class MadaBoostClassifier:
     def fit(self, X, y):
         self.alphas = []
         self.estimators = []
+        self.betas = []
         n_samples = X.shape[0]
 
-        D_t = np.ones(n_samples) / n_samples
-
+        D_0 = np.ones(n_samples) / n_samples
+        B_t = np.ones(n_samples)
+        D_t = D_0
         for t in range(self.n_estimators):
 
             h_t = copy.deepcopy(self.estimator)
@@ -31,16 +34,14 @@ class MadaBoostClassifier:
             pred = h_t.predict(X)
 
             err_t = np.sum(D_t * (pred != y)) - 1e-10
-
             alpha_t = self.learning_rate * 0.5 * np.log((1-err_t)/err_t)
             beta_t = np.exp(-alpha_t)
 
             self.alphas.append(alpha_t)
             self.estimators.append(h_t)
 
-            D_t = np.where(D_t*np.power(beta_t, np.where(pred*y, 1, -1)) <= 1/n_samples,
-                           D_t*np.power(beta_t, np.where(pred*y, 1, -1)),
-                           1/n_samples)
+            B_t *= np.where(pred==y, beta_t, 1/beta_t)
+            D_t = np.where( B_t <= 1, D_0*B_t, D_0)
             D_t /= D_t.sum()
         return self
 

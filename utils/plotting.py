@@ -116,7 +116,6 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                         continue
                     fig = plt.figure(figsize=(12, 8))
                     ax = plt.gca()
-                    plt.axis('off')
                     plt.title(f"Test Accuracy vs {param}")
 
                     ax.set_axisbelow(True)
@@ -128,7 +127,8 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                         ax.set_xscale('log')
                     ax.set_xlabel(make_label(param))
                     ax.set_ylabel("Train Accuracy")
-                    ax.set_ylim(bottom=y_test_data.min()*0.95, top=y_train_data.max()*1.05)
+                    y_range = y_train_data.max() - y_test_data.min()
+                    ax.set_ylim(bottom=y_test_data.min() - 0.1*y_range, top=y_train_data.max() + 0.1*y_range)
                     ax.legend()
 
                     plt.tight_layout()
@@ -231,7 +231,6 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
             plt.title("Best Models By Test Accuracy")
             gs = fig.add_gridspec(nrows=10, ncols=10)
             axes = [fig.add_subplot(gs[0:7, :]), fig.add_subplot(gs[7:, :])]
-
             axes[0].set_axisbelow(True)
             axes[0].grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
             sns.barplot(data=best_test_accuracy_models, x="algorithm", y="train_accuracy", color='darkblue',
@@ -241,7 +240,8 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
             axes[0].legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
             axes[0].set_xlabel("Algorithm")
             axes[0].set_ylabel("Test Accuracy")
-            axes[0].set_ylim(bottom=0.95*best_test_accuracy_models['test_accuracy'].min(), top=1)
+            y_range = best_test_accuracy_models['train_accuracy'].max() - best_test_accuracy_models['test_accuracy'].min()
+            axes[0].set_ylim(bottom=best_test_accuracy_models['test_accuracy'].min()-y_range*0.1, top=best_test_accuracy_models['train_accuracy'].max()+y_range*0.1)
 
             textstr = '\n'.join([f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_test_accuracy_models[['model_params_dict']].iterrows()])
             axes[1].text(0, .95, textstr, transform=axes[1].transAxes, linespacing=1.75, verticalalignment='top', horizontalalignment='left',)
@@ -268,9 +268,10 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                         zorder=4, ax=axes[0])
             axes[0].legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
             axes[0].set_xlabel("Algorithm")
-            axes[0].set_ylabel("Train Accuracy")
-            axes[0].set_ylim(bottom=0.95*best_train_accuracy_models['test_accuracy'].min(), top=1)
-
+            axes[0].set_ylabel("Train Accuracy") 
+            y_range = best_train_accuracy_models['train_accuracy'].max() - best_train_accuracy_models['test_accuracy'].min()
+            axes[0].set_ylim(bottom=best_train_accuracy_models['test_accuracy'].min() - 0.1*y_range, 
+                             top=best_train_accuracy_models['train_accuracy'].max() + 0.1*y_range)
             textstr = '\n'.join([f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_train_accuracy_models[['model_params_dict']].iterrows()])
             axes[1].text(0, .95, textstr, transform=axes[1].transAxes, linespacing=1.75, verticalalignment='top', horizontalalignment='left',)
             axes[1].axis('off')
@@ -281,7 +282,7 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
             plt.close()
 
             
-            ### Confusion Matrices for top train accuracy and top test accuracy models from each class
+            ### Train test scatter plots for top train accuracy and top test accuracy models from each class
             pred_dir=os.path.join(test_dir_path,"pred")
             
             if os.path.isdir(pred_dir):
@@ -295,59 +296,57 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                 y_test = test_data[:, -1]
                 X_train = train_data[:, :-1]
                 X_test = test_data[:, :-1]
+                if X_test.shape[1] == 2:
+                    for algo_,row_ in best_test_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
+                        postfix=row_["file_postfix"]
+                        pred_train_file=os.path.join(pred_dir,f"train_{postfix}.csv")
+                        pred_test_file=os.path.join(pred_dir,f"test_{postfix}.csv")   
+                        if not(os.path.exists(pred_train_file) and os.path.exists(pred_test_file)):
+                            continue
+                        y_train_pred=np.genfromtxt(pred_train_file,delimiter=",")
+                        y_test_pred=np.genfromtxt(pred_test_file,delimiter=",")
+                        cm_train=confusion_matrix(y_train,y_train_pred)
+                        cm_test=confusion_matrix(y_test,y_test_pred)
+                        disp_tr=ConfusionMatrixDisplay(cm_train)
+                        disp_te=ConfusionMatrixDisplay(cm_test)
 
-                for algo_,row_ in best_test_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
-                    postfix=row_["file_postfix"]
-                    pred_train_file=os.path.join(pred_dir,f"train_{postfix}.csv")
-                    pred_test_file=os.path.join(pred_dir,f"test_{postfix}.csv")   
-                    if not(os.path.exists(pred_train_file) and os.path.exists(pred_test_file)):
-                        continue
-                    y_train_pred=np.genfromtxt(pred_train_file,delimiter=",")
-                    y_test_pred=np.genfromtxt(pred_test_file,delimiter=",")
-                    cm_train=confusion_matrix(y_train,y_train_pred)
-                    cm_test=confusion_matrix(y_test,y_test_pred)
-                    disp_tr=ConfusionMatrixDisplay(cm_train)
-                    disp_te=ConfusionMatrixDisplay(cm_test)
+                        fig=plt.figure(figsize=(12,8))
+                        plt.title(f"{algo_} Train Confusion Matrix")
+                        ax = plt.gca()
+                        disp_tr.plot(ax=ax)
+                        ax.grid(False)
+                        plt.tight_layout()
+                        plt.savefig(os.path.join(plot_subdir,f"{algo_}_cm_train.png"),dpi=150)
+                        plt.close()
 
-                    fig=plt.figure(figsize=(12,8))
-                    plt.axis("off")
-                    plt.title(f"{algo_} Train Confusion Matrix")
-                    ax = plt.gca()
-                    disp_tr.plot(ax=ax)
-                    ax.grid(False)
-                    plt.tight_layout()
-                    plt.savefig(os.path.join(plot_subdir,f"{algo_}_cm_train.png"),dpi=150)
-                    plt.close()
+                        fig=plt.figure(figsize=(12,8))
+                        ax = plt.gca()
+                        plt.title(f"{algo_} Test Confusion Matrix")
+                        disp_te.plot(ax=ax)
+                        ax.grid(False)
+                        plt.tight_layout()
+                        plt.savefig(os.path.join(plot_subdir,f"{algo_}_cm_test.png"),dpi=150)
+                        plt.close()
 
-                    fig=plt.figure(figsize=(12,8))
-                    ax = plt.gca()
-                    plt.axis("off")
-                    plt.title(f"{algo_} Test Confusion Matrix")
-                    disp_te.plot(ax=ax)
-                    ax.grid(False)
-                    plt.tight_layout()
-                    plt.savefig(os.path.join(plot_subdir,f"{algo_}_cm_test.png"),dpi=150)
-                    plt.close()
-
-                    fig, axes = plt.subplots(1, 2, figsize=(24,8))
-                    fig.suptitle(f"{algo_} Train and Test Predictions")
-                    true_train_preds = np.where(y_train==y_train_pred)
-                    true_test_preds = np.where(y_test==y_test_pred)
-                    false_train_preds = np.where(y_train!=y_train_pred)
-                    false_test_preds =  np.where(y_test!=y_test_pred)
-                    axes[0].scatter(x=X_train[true_train_preds, 0], y=X_train[true_train_preds, 1], c=np.where(y_train[true_train_preds], 'r', 'b'), marker='+', s=12, label="Correct")
-                    axes[0].scatter(x=X_train[false_train_preds, 0], y=X_train[false_train_preds, 1], c=np.where(y_train[false_train_preds], 'r', 'b'), marker='x', label="Incorrect")
-                    axes[0].grid(False)
-                    axes[0].set_title("Train")
-                    axes[1].scatter(x=X_test[true_test_preds, 0], y=X_test[true_test_preds, 1], c=np.where(y_test[true_test_preds], 'r', 'b'), marker='+', s=12, label="Correct")
-                    axes[1].scatter(x=X_test[false_test_preds, 0], y=X_test[false_test_preds, 1], c=np.where(y_test[false_test_preds], 'r', 'b'), marker='x', label="Incorrect")
-                    
-                    axes[1].grid(False)
-                    axes[1].set_title("Test")
-                    plt.legend()
-                    plt.tight_layout()
-                    plt.savefig(os.path.join(plot_subdir,f"{algo_}_train-test-preds.png"),dpi=150)
-                    plt.close()
+                        fig, axes = plt.subplots(1, 2, figsize=(24,8))
+                        fig.suptitle(f"{algo_} Train and Test Predictions")
+                        true_train_preds = np.where(y_train==y_train_pred)
+                        true_test_preds = np.where(y_test==y_test_pred)
+                        false_train_preds = np.where(y_train!=y_train_pred)
+                        false_test_preds =  np.where(y_test!=y_test_pred)
+                        axes[0].scatter(x=X_train[true_train_preds, 0], y=X_train[true_train_preds, 1], c=np.where(y_train[true_train_preds], 'r', 'b'), marker='+', s=12, label="Correct")
+                        axes[0].scatter(x=X_train[false_train_preds, 0], y=X_train[false_train_preds, 1], c=np.where(y_train[false_train_preds], 'r', 'b'), marker='x', label="Incorrect")
+                        axes[0].grid(False)
+                        axes[0].set_title("Train")
+                        axes[1].scatter(x=X_test[true_test_preds, 0], y=X_test[true_test_preds, 1], c=np.where(y_test[true_test_preds], 'r', 'b'), marker='+', s=12, label="Correct")
+                        axes[1].scatter(x=X_test[false_test_preds, 0], y=X_test[false_test_preds, 1], c=np.where(y_test[false_test_preds], 'r', 'b'), marker='x', label="Incorrect")
+                        
+                        axes[1].grid(False)
+                        axes[1].set_title("Test")
+                        plt.legend()
+                        plt.tight_layout()
+                        plt.savefig(os.path.join(plot_subdir,f"{algo_}_train-test-preds.png"),dpi=150)
+                        plt.close()
                 
     print("Done.")
 
