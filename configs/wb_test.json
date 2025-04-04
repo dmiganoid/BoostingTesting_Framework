@@ -1,5 +1,5 @@
 {
-  "algorithms": ["CatBoost", "XGBoost", "LightGBM",  "AdaBoost", "MadaBoost", "FilterBoost", "BrownBoost", "XWaterBoost", "WaterBoost"],
+  "algorithms": ["CatBoost", "MadaBoost", "AdaBoost", "XWaterBoost", "XMadaBoost", "MWaterBoost"],
 
   "estimator": {
     "estimator_type": "stump",

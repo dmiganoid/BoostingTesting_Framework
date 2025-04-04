@@ -226,7 +226,7 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                         plt.close()
 
             ### compare top test accuracy models from each class
-            fig = plt.figure(figsize=(12, 8))
+            fig = plt.figure(figsize=(16, 10))
             plt.axis('off')
             plt.title("Best Models By Test Accuracy")
             gs = fig.add_gridspec(nrows=10, ncols=10)
@@ -254,7 +254,7 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
             
 
             ### compare top train accuracy models from each class
-            fig = plt.figure(figsize=(12, 8))
+            fig = plt.figure(figsize=(16, 10))
             plt.axis('off')
             plt.title(f"Best Models By Train Accuracy")
             gs = fig.add_gridspec(nrows=10, ncols=10)
@@ -335,11 +335,11 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                         false_train_preds = np.where(y_train!=y_train_pred)
                         false_test_preds =  np.where(y_test!=y_test_pred)
                         axes[0].scatter(x=X_train[true_train_preds, 0], y=X_train[true_train_preds, 1], c=np.where(y_train[true_train_preds], 'r', 'b'), marker='+', s=12, label="Correct")
-                        axes[0].scatter(x=X_train[false_train_preds, 0], y=X_train[false_train_preds, 1], c=np.where(y_train[false_train_preds], 'r', 'b'), marker='x', label="Incorrect")
+                        axes[0].scatter(x=X_train[false_train_preds, 0], y=X_train[false_train_preds, 1], c=np.where(y_train[false_train_preds], 'darkblue', 'darkred'), marker='x', label="Incorrect")
                         axes[0].grid(False)
                         axes[0].set_title("Train")
                         axes[1].scatter(x=X_test[true_test_preds, 0], y=X_test[true_test_preds, 1], c=np.where(y_test[true_test_preds], 'r', 'b'), marker='+', s=12, label="Correct")
-                        axes[1].scatter(x=X_test[false_test_preds, 0], y=X_test[false_test_preds, 1], c=np.where(y_test[false_test_preds], 'r', 'b'), marker='x', label="Incorrect")
+                        axes[1].scatter(x=X_test[false_test_preds, 0], y=X_test[false_test_preds, 1], c=np.where(y_test[false_test_preds],  'darkblue', 'darkred'), marker='x', label="Incorrect")
                         
                         axes[1].grid(False)
                         axes[1].set_title("Test")

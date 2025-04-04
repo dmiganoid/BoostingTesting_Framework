@@ -79,16 +79,30 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
 
-        case "WaterBoost":
-            from models.waterboost import WaterBoostClassifier
-            algorithm_class = WaterBoostClassifier
+        case "XWaterBoost":
+            from models.waterboost import XWaterBoostClassifier
+            algorithm_class = XWaterBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
 
-        case "WaterBoostLimited":
-            from models.waterboost import WaterBoostClassifier_limited
-            algorithm_class = WaterBoostClassifier_limited
+        case "MWaterBoost":
+            from models.waterboost import MWaterBoostClassifier
+            algorithm_class = MWaterBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
+        case "AWaterBoost":
+            from models.waterboost import AWaterBoostClassifier
+            algorithm_class = AWaterBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
+        case "XMadaBoost":
+            from models.waterboost import XMadaBoostClassifier
+            algorithm_class = XMadaBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
