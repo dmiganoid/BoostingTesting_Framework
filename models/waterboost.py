@@ -49,7 +49,6 @@ class AWaterBoostClassifier:
     def score(self, X, y):
         return (self.predict(X, sign=True)==y).sum()/X.shape[0]
 
-
     def get_params(self, deep=True):
         return {"n_estimators": self.n_estimators, "estimator": self.estimator, "learning_rate": self.learning_rate, "random_state": self.random_state}
 
@@ -102,18 +101,11 @@ class MWaterBoostClassifier:
                            1/n_samples * B_t,
                            1/n_samples)
 
-            decreased_weight = 1-(D_t).sum()
-            
-            assert decreased_weight >= 0
-            
+            decreased_weight = 1-(D_t).sum()            
             increased_weight_d = np.where(B_t > 1, B_t, 0)
-            
             if increased_weight_d.sum() > 0:
                 increased_weight = decreased_weight * increased_weight_d / increased_weight_d.sum()
-                D_t += increased_weight
-
-            assert (increased_weight >= 0).all()
-        
+                D_t += increased_weight        
             
         return self
 
@@ -249,7 +241,7 @@ class XMadaBoostClassifier:
             
             B_t *= np.where(pred==y, np.exp(-alpha_t), np.exp(alpha_t))
             D_t = np.where( B_t <= 1,
-                           D_t * B_t, # D_0 * B_t
+                           D_t * B_t, # D_0 * B_t in madaboost
                            1/n_samples)
 
             D_t /= D_t.sum()

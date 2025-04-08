@@ -23,7 +23,8 @@ def run_benchmark(cfg_file):
 
     print("=== Starting Boosting Benchmark ===")
 
-    results_path = os.path.join('results', f'{int(time())}-{cfg_file.split('.')[0]}') 
+    results_folder = f'{int(time())}-{cfg_file.split('.')[0]}'
+    results_path = os.path.join('results', results_folder) 
     mkdir(results_path)
 
     algorithms_data = []
@@ -82,6 +83,7 @@ def run_benchmark(cfg_file):
         )
 
     print("=== Benchmark Finished ===")
+    return results_folder
 
 def parse_results_to_df(json_path):
     with open(json_path, "r") as f:
@@ -122,9 +124,9 @@ def main_cli():
     elif args.mode == "trainplot":
         cfg_file = args.cfg if args.cfg is not None else 'cfg.json'
         from main import run_benchmark
-        run_benchmark(cfg_file)
+        results_folder = run_benchmark(cfg_file)
         from utils.plotting import plot_mode
-        plot_mode(only_dirs=args.plot_dirs)
+        plot_mode(only_dirs=[results_folder])
     else:
         parser.print_help()
 

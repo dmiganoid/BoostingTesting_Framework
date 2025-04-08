@@ -1,5 +1,5 @@
 {
-  "algorithms": ["CatBoost", "MadaBoost", "AdaBoost", "XWaterBoost", "XMadaBoost", "MWaterBoost", "AWaterBoost"],
+  "algorithms": ["AdaBoost"],
 
   "estimator": {
     "estimator_type": "stump",
@@ -14,17 +14,8 @@
     "use_predefined_datasets": true,
     "predefined_dataset_paths": [
       "dataset-generated-0.csv",  
-      "dataset-generated-1.csv",
-      "dataset-generated-2.csv",
-      "dataset-generated-3.csv",
-      "dataset-generated-4.csv",
-      "dataset-generated-5.csv",  
-      "dataset-generated-6.csv",
-      "dataset-generated-7.csv",
-      "dataset-generated-8.csv",
-      "dataset-generated-9.csv",
-      "abalone_prepared.csv",
-      "raisin_prepared.csv"
+      "dataset-generated-1.csv"
+
     ]
   },
 

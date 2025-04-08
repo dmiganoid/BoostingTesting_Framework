@@ -9,7 +9,7 @@ import os
 class DataSetGenerator:
     def __init__(self):
         init_degree = 2
-        init_N = 5
+        init_N = 250
         init_noise = 0
 
 
@@ -20,7 +20,7 @@ class DataSetGenerator:
             ax=self.N_samples_ax,
             label='N samples for control point',
             valmin=5,
-            valmax=500,
+            valmax=1000,
             valinit=init_N,
             valstep=1,
         )
