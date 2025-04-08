@@ -41,6 +41,10 @@
     "LightGBM": {
       "max_depth": [1],
       "gpu": true
+    },
+    "GradientBoost": {
+      "gpu": false,
+      "loss": ["mse", "log_loss"]
     }
   }
 }

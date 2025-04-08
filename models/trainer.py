@@ -56,13 +56,17 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
             param_grid["algorithm"] = ['SAMME']
 
-        # No estimator for GradientBoosting
-        case "GradientBoosting":
-            from sklearn.ensemble import GradientBoostingClassifier
-            algorithm_class = GradientBoostingClassifier
-            param_grid["loss"] = ['log_loss']
+        case "GradientBoost":
+            from models.gradientboost import (
+                GradientBoostingClassifier, GradientBoostingClassifierGPU
+            )
+            gpu = algorithm_config["CustomGradientBoost"].get("gpu", False)
+            algorithm_class = GradientBoostingClassifierGPU if gpu else GradientBoostingClassifier
+            param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
+            param_grid["loss"] = algorithm_config["GradientBoost"]["loss"]
+
         case "BrownBoost":
             from models.brownboost import BrownBoostClassifier, BrownBoostClassifierGPU
             gpu = algorithm_config["BrownBoost"].get("gpu", False)

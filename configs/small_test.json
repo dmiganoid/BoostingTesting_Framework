@@ -46,6 +46,10 @@
       "epsilon" : [0.05],
       "delta" : [0.9],
       "tau" : [0.1]
+    },
+    "GradientBoost": {
+      "gpu": false,
+      "loss": ["mse", "log_loss"]
     }
   }
 }
