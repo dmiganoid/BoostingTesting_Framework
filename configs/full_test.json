@@ -1,5 +1,5 @@
 {
-    "algorithms": ["CatBoost", "XGBoost", "LightGBM", "GradientBoosting", "AdaBoost", "BrownBoost", "MadaBoost", "FilterBoost", "WaterBoost", "WaterBoostLimited"],
+    "algorithms": ["CatBoost", "XGBoost", "LightGBM", "GradientBoost", "AdaBoost", "MadaBoost", "XWaterBoost", "MWaterBoost",  "SOWAdaBoost"],
   
     "estimator": {
       "estimator_type": "stump",
@@ -50,7 +50,10 @@
       },
       "GradientBoost": {
         "gpu": false,
-        "loss": ["mse", "log_loss"]
+        "loss": ["log_loss"]
+      },
+      "SOWAdaBoost": {
+        "gpu": false
       }
     }
   }

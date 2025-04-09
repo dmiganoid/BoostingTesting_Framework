@@ -1,5 +1,5 @@
 {
-  "algorithms": ["AdaBoost", "MadaBoost", "BrownBoost", "CatBoost", "XGBoost", "LightGBM"],
+  "algorithms": ["AdaBoost", "MadaBoost", "BrownBoost", "CatBoost", "XGBoost", "LightGBM", "SOWAdaBoost"],
   "estimator": {
     "estimator_type": "stump",
     "estimator_params": {
@@ -14,7 +14,8 @@
     "multiprocessing": true,
     "use_predefined_datasets": true,
     "predefined_dataset_paths": [
-      "dataset-generated-0.csv"
+      "dataset-generated-0.csv",
+      "raisin_prepared.csv"
     ]
   },
   "model": {
@@ -25,26 +26,29 @@
     "BrownBoost": {
       "c": [4],
       "convergence_criterion": [0.001],
-      "gpu": true
+      "gpu": false
     },
     "MadaBoost": {
-      "gpu": true
+      "gpu": false
     },
     "CatBoost": {
       "depth": [1],
-      "gpu": true
+      "gpu": false
     },
     "XGBoost": {
       "max_depth": [1],
-      "gpu": true
+      "gpu": false
     },
     "LightGBM": {
       "max_depth": [1],
-      "gpu": true
+      "gpu": false
     },
     "GradientBoost": {
       "gpu": false,
       "loss": ["mse", "log_loss"]
+    },
+    "SOWAdaBoost": {
+      "gpu": false
     }
   }
 }

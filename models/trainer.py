@@ -35,11 +35,16 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
 
 def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state):
     base_estimators = []
+    base_estimators_gradient = []
+
     match base_estimator_cfg['estimator_type']:
         case "stump":
             from sklearn.tree import DecisionTreeClassifier
+            from sklearn.tree import DecisionTreeRegressor
             for params in ParameterGrid(base_estimator_cfg['estimator_params']):
                 base_estimators.append(DecisionTreeClassifier(**params))
+                base_estimators_gradient.append(DecisionTreeRegressor(**params))
+                
         case "neural_network":
             from neural_classifier import NeuralBinaryClassifier
             for params in ParameterGrid(base_estimator_cfg['estimator_params']):
@@ -60,9 +65,9 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             from models.gradientboost import (
                 GradientBoostingClassifier, GradientBoostingClassifierGPU
             )
-            gpu = algorithm_config["CustomGradientBoost"].get("gpu", False)
+            gpu = algorithm_config["GradientBoost"].get("gpu", False)
             algorithm_class = GradientBoostingClassifierGPU if gpu else GradientBoostingClassifier
-            param_grid["estimator"] = base_estimators
+            param_grid["estimator"] = base_estimators_gradient
             param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
             param_grid["loss"] = algorithm_config["GradientBoost"]["loss"]
@@ -79,6 +84,14 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             from models.madaboost import MadaBoostClassifier, MadaBoostClassifierGPU
             gpu = algorithm_config["MadaBoost"].get("gpu", False)
             algorithm_class = MadaBoostClassifierGPU if gpu else MadaBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
+        case "SOWAdaBoost":
+            from models.sowadaboost import SOWAdaBoostClassifier, SOWAdaBoostClassifierGPU
+            gpu = algorithm_config["SOWAdaBoost"].get("gpu", False)
+            algorithm_class = SOWAdaBoostClassifierGPU if gpu else SOWAdaBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
