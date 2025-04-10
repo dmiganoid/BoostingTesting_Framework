@@ -11,21 +11,7 @@
     "random_state": 42,
     "N_synthetic_tests": 1,
     "multiprocessing" : true,
-    "use_predefined_datasets": true,
-    "predefined_dataset_paths": [
-      "dataset-generated-0.csv",  
-      "dataset-generated-1.csv",
-      "dataset-generated-2.csv",
-      "dataset-generated-3.csv",
-      "dataset-generated-4.csv",
-      "dataset-generated-5.csv",  
-      "dataset-generated-6.csv",
-      "dataset-generated-7.csv",
-      "dataset-generated-8.csv",
-      "dataset-generated-9.csv",
-      "abalone_prepared.csv",
-      "raisin_prepared.csv"
-    ]
+    "use_predefined_datasets": true
   },
 
   "model": {

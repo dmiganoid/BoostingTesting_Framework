@@ -42,12 +42,13 @@ def run_benchmark(cfg_file):
     use_predefined = configuration['test'].get('use_predefined_datasets', False)
 
     if use_predefined:
-        predefined_datasets = configuration['test'].get('predefined_dataset_paths', [])
+        predefined_datasets = configuration['test'].get('predefined_datasets', [])
 
         if not predefined_datasets:
-            print("WARN: use_predefined_datasets = True, but 'predefined_datasets' empty!")
-        for dataset_name in predefined_datasets:
+            for dataset in os.listdir('datasets'):
+                predefined_datasets.append(dataset)
 
+        for dataset_name in predefined_datasets:
             csv_full_path = os.path.join(os.path.dirname(__file__), "datasets", dataset_name)
             if not os.path.exists(csv_full_path):
                 print(f"Not found: {csv_full_path}")

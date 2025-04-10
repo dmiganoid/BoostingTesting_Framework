@@ -54,12 +54,11 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
     algorithm_class = None
     match algorithm:
         case "AdaBoost":
-            from sklearn.ensemble import AdaBoostClassifier
+            from models.adaboost import AdaBoostClassifier
             algorithm_class = AdaBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
-            param_grid["algorithm"] = ['SAMME']
 
         case "GradientBoost":
             from models.gradientboost import (
