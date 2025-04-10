@@ -12,7 +12,7 @@
     "N_synthetic_tests": 1,
     "multiprocessing" : true,
     "use_predefined_datasets": true,
-    "predefined_dataset_paths": [
+    "predefined_datasets": [
       "dataset-generated-0.csv"
     ]
   },

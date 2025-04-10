@@ -13,7 +13,7 @@
     "synthetic_test_n_samples": 1000,
     "multiprocessing": true,
     "use_predefined_datasets": true,
-    "predefined_dataset_paths": [
+    "predefined_datasets": [
       "dataset-generated-0.csv",
       "raisin_prepared.csv"
     ]

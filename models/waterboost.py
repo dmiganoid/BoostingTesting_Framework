@@ -18,7 +18,7 @@ class AWaterBoostClassifier:
         self.estimators = []
         self.estimator_weights = []
         self.weights = np.ones(X.shape[0]) / X.shape[0]
-
+        self.B_t = np.ones(X.shape[0])
         for t in range(self.n_estimators):
             h_t = deepcopy(self.estimator)
             h_t.fit(X,y, sample_weight=self.weights)
@@ -28,9 +28,9 @@ class AWaterBoostClassifier:
             alpha_t = self.learning_rate * 0.5 * np.log((1-err_t)/err_t)
             self.estimators.append(h_t)
             self.estimator_weights.append(alpha_t)
-
+            self.B_t *= np.where(pred==y, np.exp(-alpha_t), np.exp(-alpha_t))
             decreased_weight = np.where(pred==y, self.weights*(1-np.exp(-alpha_t)), 0)
-            increased_weight_d = np.where(pred==y, 0, np.exp(alpha_t))
+            increased_weight_d = np.where(pred==y, 0, self.B_t) # np.exp(alpha_t)
             increased_weight = decreased_weight.sum() * increased_weight_d / increased_weight_d.sum()
             
             self.weights += np.where(pred == y, -decreased_weight, increased_weight)
@@ -166,7 +166,6 @@ class XWaterBoostClassifier:
             pred = h_t.predict(X)
 
             err_t = np.sum(D_t * (pred != y)) + 1e-10
-
             alpha_t = self.learning_rate * 0.5 * np.log((1-err_t)/err_t)
 
             self.estimator_weights.append(alpha_t)
@@ -179,15 +178,13 @@ class XWaterBoostClassifier:
             D_t = np.where( B_t <= 1,
                            D_t * B_t, # D_0 * B_t
                            1/n_samples)
-
             if (W-(D_t).sum()) > 0:
                 decreased_weight = W-(D_t).sum() #prev - now
                 increased_weight_d = np.where(B_t > 1, B_t, 0)
                 if increased_weight_d.sum() > 0:
-                    increased_weight = decreased_weight * increased_weight_d / increased_weight_d.sum()
-                D_t += increased_weight
-            else:
-                D_t /= D_t.sum()
+                    D_t += decreased_weight * increased_weight_d / increased_weight_d.sum()
+            D_t /= D_t.sum() #if no weights to increase or sum of D_t > W  
+
         return self
 
     def predict(self, X, sign=True):
@@ -265,7 +262,7 @@ class XMadaBoostClassifier:
         return y / sum(self.estimator_weights)
 
     def score(self, X, y):
-        return (self.predict(X, sign=True)==y).sum()/X.shape[0]
+        return (self.predict(X, sign=True)==y).sum() / X.shape[0]
     
     def get_params(self, deep=True):
         return {"n_estimators": self.n_estimators, "estimator": self.estimator, "learning_rate": self.learning_rate, "random_state": self.random_state}

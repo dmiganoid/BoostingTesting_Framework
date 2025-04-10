@@ -23,7 +23,7 @@ def compare_dicts(dict_1 : dict, dict_2 : dict, ignored : list):
 def make_label(label:str) -> str:
     output = label.split("_")
     for ind, word in enumerate(output):
-        if word not in ('sec', 'ms', 'n'):
+        if word not in ('sec', 'ms'):
             output[ind] = word[0].upper() + word[1:]
         else:
             output[ind] = f'({word})'
@@ -206,31 +206,70 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                         for point in plot_data:
                             Z_train[np.where(Y==point[1]), np.where(X == point[0])] = point[2]
                             Z_test[np.where(Y==point[1]), np.where(X == point[0])] = point[3]
-                        X, Y = np.meshgrid(np.log2(X), np.log2(Y))
+                        x_logscale=False
+                        y_logscale=False
+                        if np.abs(np.log2(X[0] / X[-1])) > 5:
+                            X = np.log2(X)
+                            x_logscale=True
+                        if np.abs(np.log2(Y[0] / Y[-1])) > 5:
+                            Y = np.log2(Y)
+                            y_logscale=True
+                        
+                        X, Y = np.meshgrid(X, Y)
                         fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
                         surf = ax.plot_surface(X, Y, Z_test,
                                             linewidth=0, cmap=cm.coolwarm)
+                        plt.xticks(ticks=plt.xticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.xticks()[0]])
+                        plt.yticks(ticks=plt.yticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.yticks()[0]])
+                        plt.xlabel(make_label(param_1))
+                        plt.ylabel(make_label(param_2))
                         plt.title(f"Test Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
-                        plt.tight_layout()
                         out_png = os.path.join(plot_subdir, f"{algorithm}-3d-test_accuracy-vs-{param_1}-x-{param_2}.png")
+                        plt.savefig(out_png, dpi=150)
+                        plt.close()
+
+                        fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                        surf = ax.plot_surface(X, Y, Z_test,
+                                            linewidth=0, cmap=cm.coolwarm)
+                        plt.xticks(ticks=plt.xticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.xticks()[0]])
+                        plt.yticks(ticks=plt.yticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.yticks()[0]])
+                        ax.view_init(elev=0, azim=45)
+                        plt.xlabel(make_label(param_1))
+                        plt.ylabel(make_label(param_2))
+                        plt.title(f"Projection of Test Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
+                        out_png = os.path.join(plot_subdir, f"{algorithm}-3d-proj-test_accuracy-vs-{param_1}-x-{param_2}.png")
                         plt.savefig(out_png, dpi=150)
                         plt.close()
 
                         fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
                         surf = ax.plot_surface(X, Y, Z_train,
                                             linewidth=0, cmap=cm.coolwarm)
-                        plt.title(f"Train Accuracy vs {param_1}x{param_2}")
-                        plt.tight_layout()
+                        plt.xticks(ticks=plt.xticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.xticks()[0]])
+                        plt.yticks(ticks=plt.yticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.yticks()[0]])
+                        plt.xlabel(make_label(param_1))
+                        plt.ylabel(make_label(param_2))
+                        plt.title(f"Train Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
                         out_png = os.path.join(plot_subdir, f"{algorithm}-3d-train_accuracy-vs-{param_1}-x-{param_2}.png")
                         plt.savefig(out_png, dpi=150)
                         plt.close()
+
+                        fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                        surf = ax.plot_surface(X, Y, Z_train,
+                                            linewidth=0, cmap=cm.coolwarm)
+                        ax.view_init(elev=0, azim=45)
+                        plt.title(f"Projection of Train Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
+                        plt.tight_layout()
+                        out_png = os.path.join(plot_subdir, f"{algorithm}-3d-proj-train_accuracy-vs-{param_1}-x-{param_2}.png")
+                        plt.savefig(out_png, dpi=150)
+                        plt.close()
+
 
             ### compare top test accuracy models from each class
             fig = plt.figure(figsize=(16, 10))
             plt.axis('off')
             plt.title("Best Models By Test Accuracy")
             gs = fig.add_gridspec(nrows=10, ncols=10)
-            axes = [fig.add_subplot(gs[0:7, :]), fig.add_subplot(gs[7:, :])]
+            axes = [fig.add_subplot(gs[0:7, :]), fig.add_subplot(gs[8:, :])]
             axes[0].set_axisbelow(True)
             axes[0].grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
             sns.barplot(data=best_test_accuracy_models, x="algorithm", y="train_accuracy", color='darkblue',
@@ -238,16 +277,18 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
             sns.barplot(data=best_test_accuracy_models, x="algorithm", y="test_accuracy", color='lightblue',
                         zorder=4, ax=axes[0])
             axes[0].legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
-            axes[0].set_xlabel("Algorithm")
+            axes[0].set_xlabel("")
             axes[0].set_ylabel("Test Accuracy")
-            y_range = best_test_accuracy_models['train_accuracy'].max() - best_test_accuracy_models['test_accuracy'].min()
-            axes[0].set_ylim(bottom=best_test_accuracy_models['test_accuracy'].min()-y_range*0.1, top=best_test_accuracy_models['train_accuracy'].max()+y_range*0.1)
-
+            axes[0].tick_params('x', rotation=20)
+            y_min = np.min([best_test_accuracy_models['train_accuracy'].min(), best_test_accuracy_models['test_accuracy'].min()])
+            y_max = np.max([best_test_accuracy_models['train_accuracy'].max(), best_test_accuracy_models['test_accuracy'].max()])
+            y_range = y_max - y_min
+            axes[0].set_ylim(bottom=y_min - 0.1*y_range, 
+                             top=y_max + 0.1*y_range)
             textstr = '\n'.join([f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_test_accuracy_models[['model_params_dict']].iterrows()])
             axes[1].text(0, .95, textstr, transform=axes[1].transAxes, linespacing=1.75, verticalalignment='top', horizontalalignment='left',)
             axes[1].axis('off')
 
-            plt.tight_layout()
             out_png = os.path.join(plot_subdir, f"global_top_test_accuracy.png")
             plt.savefig(out_png, dpi=150)
             plt.close()
@@ -258,7 +299,7 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
             plt.axis('off')
             plt.title(f"Best Models By Train Accuracy")
             gs = fig.add_gridspec(nrows=10, ncols=10)
-            axes = [fig.add_subplot(gs[0:7, :]), fig.add_subplot(gs[7:, :])]
+            axes = [fig.add_subplot(gs[0:7, :]), fig.add_subplot(gs[8:, :])]
 
             axes[0].set_axisbelow(True)
             axes[0].grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
@@ -267,16 +308,18 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
             sns.barplot(data=best_train_accuracy_models, x="algorithm", y="test_accuracy", color='lightblue',
                         zorder=4, ax=axes[0])
             axes[0].legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
-            axes[0].set_xlabel("Algorithm")
+            axes[0].tick_params('x', rotation=20)
+            axes[0].set_xlabel("")
             axes[0].set_ylabel("Train Accuracy") 
-            y_range = best_train_accuracy_models['train_accuracy'].max() - best_train_accuracy_models['test_accuracy'].min()
-            axes[0].set_ylim(bottom=best_train_accuracy_models['test_accuracy'].min() - 0.1*y_range, 
-                             top=best_train_accuracy_models['train_accuracy'].max() + 0.1*y_range)
+            y_min = np.min([best_train_accuracy_models['train_accuracy'].min(), best_train_accuracy_models['test_accuracy'].min()])
+            y_max = np.max([best_train_accuracy_models['train_accuracy'].max(), best_train_accuracy_models['test_accuracy'].max()])
+            y_range = y_max - y_min
+            axes[0].set_ylim(bottom=y_min - 0.1*y_range, 
+                             top=y_max + 0.1*y_range)
             textstr = '\n'.join([f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_train_accuracy_models[['model_params_dict']].iterrows()])
             axes[1].text(0, .95, textstr, transform=axes[1].transAxes, linespacing=1.75, verticalalignment='top', horizontalalignment='left',)
             axes[1].axis('off')
             
-            plt.tight_layout()
             out_png = os.path.join(plot_subdir, f"global_top_train_accuracy.png")
             plt.savefig(out_png, dpi=150)
             plt.close()
@@ -290,35 +333,42 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                 test_file = os.path.join(test_dir_path, "test-dataset.csv")
                 if not (os.path.exists(train_file) and os.path.exists(test_file)):
                     continue
+
                 train_data = np.genfromtxt(train_file, delimiter=",")
                 test_data = np.genfromtxt(test_file, delimiter=",")
+
                 y_train = train_data[:, -1]
                 y_test = test_data[:, -1]
                 X_train = train_data[:, :-1]
                 X_test = test_data[:, :-1]
+
                 if X_test.shape[1] == 2:
                     for algo_,row_ in best_test_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
                         postfix=row_["file_postfix"]
+
                         pred_train_file=os.path.join(pred_dir,f"train_{postfix}.csv")
-                        pred_test_file=os.path.join(pred_dir,f"test_{postfix}.csv")   
+                        pred_test_file=os.path.join(pred_dir,f"test_{postfix}.csv")
                         if not(os.path.exists(pred_train_file) and os.path.exists(pred_test_file)):
                             continue
+
                         y_train_pred=np.genfromtxt(pred_train_file,delimiter=",")
                         y_test_pred=np.genfromtxt(pred_test_file,delimiter=",")
 
                         fig, axes = plt.subplots(1, 2, figsize=(24,8))
                         fig.suptitle(f"{algo_} Train and Test Predictions")
+
                         true_train_preds = np.where(y_train==y_train_pred)
                         true_test_preds = np.where(y_test==y_test_pred)
                         false_train_preds = np.where(y_train!=y_train_pred)
                         false_test_preds =  np.where(y_test!=y_test_pred)
+
                         axes[0].scatter(x=X_train[true_train_preds, 0], y=X_train[true_train_preds, 1], c=np.where(y_train_pred[true_train_preds], 'r', 'b'), marker='+', s=12, label="Correct")
                         axes[0].scatter(x=X_train[false_train_preds, 0], y=X_train[false_train_preds, 1], c=np.where(y_train_pred[false_train_preds], 'darkred',  'darkblue'), marker='x', label="Incorrect")
                         axes[0].grid(False)
                         axes[0].set_title("Train")
+
                         axes[1].scatter(x=X_test[true_test_preds, 0], y=X_test[true_test_preds, 1], c=np.where(y_test_pred[true_test_preds], 'r', 'b'), marker='+', s=12, label="Correct")
                         axes[1].scatter(x=X_test[false_test_preds, 0], y=X_test[false_test_preds, 1], c=np.where(y_test_pred[false_test_preds],  'darkred', 'darkblue'), marker='x', label="Incorrect")
-                        
                         axes[1].grid(False)
                         axes[1].set_title("Test")
                         plt.legend()

@@ -1,5 +1,5 @@
 {
-  "algorithms": ["CatBoost", "MadaBoost", "AdaBoost", "XWaterBoost", "XMadaBoost", "MWaterBoost", "AWaterBoost"],
+  "algorithms": ["CatBoost", "XGBoost", "LightGBM", "GradientBoost", "AdaBoost", "MadaBoost", "XWaterBoost", "SOWAdaBoost"],
 
   "estimator": {
     "estimator_type": "stump",
@@ -16,11 +16,11 @@
 
   "model": {
     "common": {
-      "n_estimators": [ 2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 128],
-      "learning_rate": [ 0.016, 0.064, 0.256, 1]
+      "n_estimators": [ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024],
+      "learning_rate": [ 0.001, 0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1]
     },
     "BrownBoost": {
-      "c": [ 0.25, 0.5, 0.75 ],
+      "c": [ 0.25, 0.5, 0.75, 1, 2],
       "convergence_criterion": [0.001]
     },
     "MadaBoost": {},
@@ -38,6 +38,13 @@
       "epsilon" : [0.05],
       "delta" : [0.9],
       "tau" : [0.1]
+    },
+    "GradientBoost": {
+      "gpu": false,
+      "loss": ["log_loss"]
+    },
+    "SOWAdaBoost": {
+      "gpu": false
     }
   }
 }
