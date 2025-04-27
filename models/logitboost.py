@@ -106,10 +106,10 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         `Project Euclid <https://projecteuclid.org/euclid.aos/1016218223>`__.
     """
 
-    def __init__(self, base_estimator=None, n_estimators=50,
+    def __init__(self, estimator=None, n_estimators=50,
                  weight_trim_quantile=0.05, max_response=4.0, learning_rate=1.0,
                  bootstrap=False, random_state=None):
-        super(LogitBoost, self).__init__(estimator=base_estimator,
+        super(LogitBoost, self).__init__(estimator=estimator,
                                          n_estimators=n_estimators)
         self.weight_trim_quantile = weight_trim_quantile
         self.max_response = max_response

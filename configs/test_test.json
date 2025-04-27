@@ -1,5 +1,5 @@
 {
-  "algorithms": ["AdaBoost"],
+  "algorithms": ["AdaBoost", "LogitBoost", "RealAdaBoost", "XWaterBoost"],
 
   "estimator": {
     "estimator_type": "stump",
@@ -13,16 +13,17 @@
     "multiprocessing" : true,
     "use_predefined_datasets": true,
     "predefined_datasets": [
-      "dataset-generated-0.csv",  
-      "dataset-generated-1.csv"
-
+      "keel_new-thyroid1_prepared.csv",  
+      "keel_segment0_prepared.csv",
+      "keel_vehicle3_prepared.csv",
+      "keel_yeast3_prepared.csv"
     ]
   },
 
   "model": {
     "common": {
-      "n_estimators": [ 2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 128],
-      "learning_rate": [ 0.016, 0.064, 0.256, 1]
+      "n_estimators": [ 2, 4, 6, 8, 12, 16, 24, 32, 48, 64],
+      "learning_rate": [ 1]
     },
     "BrownBoost": {
       "c": [ 0.25, 0.5, 0.75 ],

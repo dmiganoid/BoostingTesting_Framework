@@ -79,6 +79,7 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["c"] = algorithm_config["BrownBoost"]["c"]
             param_grid["convergence_criterion"] = algorithm_config["BrownBoost"]["convergence_criterion"]
             param_grid["max_estimators"] = [200000]
+        
         case "MadaBoost":
             from models.madaboost import MadaBoostClassifier, MadaBoostClassifierGPU
             gpu = algorithm_config["MadaBoost"].get("gpu", False)
@@ -86,18 +87,21 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
         case "RealAdaBoost":
-            from models.realadaboostpy import RealAdaBoostClassifier
+            from models.realadaboost import RealAdaBoostClassifier
             algorithm_class = RealAdaBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
         case "LogitBoost":
             from models.logitboost import LogitBoost
             algorithm_class = LogitBoost
             param_grid["estimator"] = base_regressor_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
         case "SOWAdaBoost":
             from models.sowadaboost import SOWAdaBoostClassifier, SOWAdaBoostClassifierGPU
             gpu = algorithm_config["SOWAdaBoost"].get("gpu", False)

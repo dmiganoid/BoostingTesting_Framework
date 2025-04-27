@@ -127,8 +127,12 @@ def plot_mode(only_dirs=None, best_n=5, worst_n=5, best_k_per_algo=2):
                         ax.set_xscale('log')
                     ax.set_xlabel(make_label(param))
                     ax.set_ylabel("Train Accuracy")
-                    y_range = y_train_data.max() - y_test_data.min()
-                    ax.set_ylim(bottom=y_test_data.min() - 0.1*y_range, top=y_train_data.max() + 0.1*y_range)
+
+                    y_min = np.min((y_test_data, y_train_data))
+                    y_max = np.max((y_test_data, y_train_data))
+                    y_range = y_max - y_min
+
+                    ax.set_ylim(bottom=y_min - 0.1*y_range, top=y_max + 0.1*y_range)
                     ax.legend()
 
                     plt.tight_layout()
