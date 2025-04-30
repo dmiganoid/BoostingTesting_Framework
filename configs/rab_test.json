@@ -1,5 +1,5 @@
 {
-  "algorithms": ["GradientBoost", "AdaBoost", "MadaBoost", "AdaBoost", "LogitBoost", "RealAdaBoost", "XWaterBoost"],
+  "algorithms": ["ModestAdaBoost", "RealAdaBoost", "LogitBoost", "AdaBoost"],
 
   "estimator": {
     "estimator_type": "stump",
@@ -7,22 +7,28 @@
   },
 
   "test": {
-    "test_size": 0.15,
+    "test_size": 0.5,
     "random_state": 42,
     "N_synthetic_tests": 1,
     "multiprocessing" : true,
     "use_predefined_datasets": true,
     "predefined_datasets": [
-    ]
+      "dataset-generated-6.csv",  
+      "dataset-generated-1.csv",
+      "dataset-generated-2.csv",
+      "keel_yeast3_prepared.csv",
+      "dataset-generated-4.csv",
+      "raisin_prepared.csv"
+    ] 
   },
 
   "model": {
     "common": {
-      "n_estimators": [ 2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 196, 256],
-      "learning_rate": [ 0.001, 0.008, 0.032, 0.128, 0.256, 0.512, 1]
+      "n_estimators": [ 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64],
+      "learning_rate": [ 1 ]
     },
     "BrownBoost": {
-      "c": [ 0.25, 0.5, 0.75, 1, 2, 3],
+      "c": [ 0.25, 0.5, 0.75, 1, 2],
       "convergence_criterion": [0.001]
     },
     "MadaBoost": {},

@@ -28,12 +28,12 @@ class AWaterBoostClassifier:
             alpha_t = self.learning_rate * 0.5 * np.log((1-err_t)/err_t)
             self.estimators.append(h_t)
             self.estimator_weights.append(alpha_t)
-            self.B_t *= np.where(pred==y, np.exp(-alpha_t), np.exp(-alpha_t))
+            self.B_t *= np.where(pred==y, np.exp(-alpha_t), np.exp(alpha_t))
             decreased_weight = np.where(pred==y, self.weights*(1-np.exp(-alpha_t)), 0)
             increased_weight_d = np.where(pred==y, 0, self.B_t) # np.exp(alpha_t)
-            increased_weight = decreased_weight.sum() * increased_weight_d / increased_weight_d.sum()
-            
-            self.weights += np.where(pred == y, -decreased_weight, increased_weight)
+            if increased_weight_d.sum() != 0:
+                increased_weight = decreased_weight.sum() * increased_weight_d / increased_weight_d.sum()
+                self.weights += np.where(pred == y, -decreased_weight, increased_weight)
 
         return self
 
@@ -59,7 +59,6 @@ class AWaterBoostClassifier:
         self.learning_rate = params.get("learning_rate", self.learning_rate)
         self.random_state = params.get("random_state", self.random_state)
         return self
-
 
 class MWaterBoostClassifier:
     def __init__(self, estimator=None, n_estimators=20, learning_rate=1):
@@ -139,8 +138,6 @@ class MWaterBoostClassifier:
         self.random_state = params.get("random_state", self.random_state)
         return self
     
-
-    
 class XWaterBoostClassifier:
     def __init__(self, estimator=None, n_estimators=20, learning_rate=1):
         self.estimator = estimator
@@ -210,7 +207,6 @@ class XWaterBoostClassifier:
         return self
     
 
-    
 class XMadaBoostClassifier:
     def __init__(self, estimator=None, n_estimators=20, learning_rate=1):
         self.estimator = estimator

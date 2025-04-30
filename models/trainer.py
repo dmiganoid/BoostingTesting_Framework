@@ -95,6 +95,13 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
 
+        case "ModestAdaBoost":
+            from models.modestadaboost import ModestAdaBoostClassifier
+            algorithm_class = ModestAdaBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
         case "LogitBoost":
             from models.logitboost import LogitBoost
             algorithm_class = LogitBoost
@@ -113,6 +120,13 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
         case "XWaterBoost":
             from models.waterboost import XWaterBoostClassifier
             algorithm_class = XWaterBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
+        case "XMWaterBoost":
+            from models.waterboost import XMWaterBoostClassifier
+            algorithm_class = XMWaterBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]

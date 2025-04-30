@@ -107,6 +107,8 @@ def main_cli():
     parser.add_argument("--mode", choices=["generate", "train", "plot", "trainplot"], required=True)
     parser.add_argument("--cfg")
     parser.add_argument("--plot_dirs", nargs='*', default=None, help="Список подпапок в results для построения графиков")
+    parser.add_argument("--mppl", default=True)
+
     args = parser.parse_args()
 
     if args.mode == "generate":
@@ -120,14 +122,14 @@ def main_cli():
 
     elif args.mode == "plot":
         from utils.plotting import plot_mode
-        plot_mode(only_dirs=args.plot_dirs)
+        plot_mode(only_dirs=args.plot_dirs, multiprocessing=args.mppl)
 
     elif args.mode == "trainplot":
         cfg_file = args.cfg if args.cfg is not None else 'cfg.json'
         from main import run_benchmark
         results_folder = run_benchmark(cfg_file)
         from utils.plotting import plot_mode
-        plot_mode(only_dirs=[results_folder])
+        plot_mode(only_dirs=[results_folder], multiprocessing=int(args.mppl) if args.mppl.isdigit() else bool(args.mppl))
     else:
         parser.print_help()
 

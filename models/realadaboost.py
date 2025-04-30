@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-
+from sklearn.tree import DecisionTreeClassifier
 
 class RealAdaBoostClassifier:
     def __init__(self, estimator=None, n_estimators=500, learning_rate=1, random_state=None):
@@ -8,6 +8,7 @@ class RealAdaBoostClassifier:
         self.estimator = estimator
         self.learning_rate = learning_rate
         self.estimators = []
+        self.probs = []
         self.random_state = random_state
         self.eps=1e-6
 
@@ -21,10 +22,19 @@ class RealAdaBoostClassifier:
             h_t = copy.deepcopy(self.estimator)
             h_t.fit(X, y, sample_weight=D_t)
             
-            pred = h_t.predict_proba(X)[:, 1]
-            p = np.clip(pred, self.eps, 1 - self.eps)
-            q = np.clip(1-pred, self.eps, 1 - self.eps)
-            pred = 1/2 *np.log(p/q)
+            pred_leaves = h_t.apply(X)
+            if type(self.estimator) == DecisionTreeClassifier and h_t.get_depth() == 1:
+                
+                probs_t = np.zeros(h_t.get_n_leaves())
+                for leaf_ind in range(1, h_t.get_n_leaves()+1):
+                    probs_t[leaf_ind-1]= np.where((pred_leaves == leaf_ind) * (y==1), D_t, 0).sum() / np.where(leaf_ind == pred_leaves, D_t, 0).sum()
+
+                self.probs.append(probs_t)
+            else:
+                raise NotImplementedError
+
+            pred_prob = np.take_along_axis(probs_t, pred_leaves-1, 0)
+            pred = 1/2 * np.log(np.clip(pred_prob, self.eps, 1 - self.eps)/np.clip(1-pred_prob, self.eps, 1 - self.eps))
             
             self.estimators.append(h_t)
 
@@ -35,11 +45,8 @@ class RealAdaBoostClassifier:
     def predict(self, X):
         y = np.zeros(X.shape[0])
         for t in range(self.n_estimators):
-            pred = self.estimators[t].predict_proba(X)[:, 1]
-            p = np.clip(pred, self.eps, 1 - self.eps)
-            q = np.clip(1-pred, self.eps, 1 - self.eps)
-            y += 1/2 *np.log(p/q)
-
+            pred_prob = np.take_along_axis(self.probs[t], self.estimators[t].apply(X)-1, 0)
+            y += 1/2 * np.log(np.clip(pred_prob, self.eps, 1 - self.eps)/np.clip(1-pred_prob, self.eps, 1 - self.eps))
         return np.where(y > 0, self.estimators[0].classes_[1], self.estimators[0].classes_[0])
 
     def score(self, X, y):
