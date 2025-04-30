@@ -107,7 +107,7 @@ def main_cli():
     parser.add_argument("--mode", choices=["generate", "train", "plot", "trainplot"], required=True)
     parser.add_argument("--cfg")
     parser.add_argument("--plot_dirs", nargs='*', default=None, help="Список подпапок в results для построения графиков")
-    parser.add_argument("--mppl", default=True)
+    parser.add_argument("--mppl", default="True")
 
     args = parser.parse_args()
 
