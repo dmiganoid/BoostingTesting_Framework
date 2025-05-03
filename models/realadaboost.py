@@ -28,7 +28,7 @@ class RealAdaBoostClassifier:
                 probs_t = np.empty(N_nodes)
                 for prob_ind in range(N_nodes):
                     leaf_ind = prob_ind + 1 
-                    probs_t[prob_ind]= np.where((pred_leaf_ind == leaf_ind) * (y==1), D_t, 0).sum() / np.where(pred_leaf_ind == leaf_ind, D_t, 0).sum() if np.where(pred_leaf_ind == leaf_ind, D_t, 0).sum() != 0 else 0.5
+                    probs_t[prob_ind] = np.where((pred_leaf_ind == leaf_ind) * (y==1), D_t, 0).sum() / np.where(pred_leaf_ind == leaf_ind, D_t, 0).sum() if np.where(pred_leaf_ind == leaf_ind, D_t, 0).sum() != 0 else 0.5
 
                 self.probs.append(probs_t)
 
