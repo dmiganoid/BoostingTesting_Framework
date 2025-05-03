@@ -32,7 +32,7 @@ class BrownBoostClassifier:
         self.estimator = estimator
         self.c = c
         self.max_estimators = max_estimators
-        self.max_iter_newton_raphson = 100
+        self.max_iter_newton_raphson = 1000
         self.convergence_criterion = convergence_criterion
         self.alphas = []
         self.estimators = []

@@ -78,7 +78,7 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["estimator"] = base_estimators
             param_grid["c"] = algorithm_config["BrownBoost"]["c"]
             param_grid["convergence_criterion"] = algorithm_config["BrownBoost"]["convergence_criterion"]
-            param_grid["max_estimators"] = [200000]
+            param_grid["max_estimators"] = [ max(algorithm_config["common"]["n_estimators"])]
         
         case "MadaBoost":
             from models.madaboost import MadaBoostClassifier, MadaBoostClassifierGPU
@@ -91,6 +91,13 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
         case "RealAdaBoost":
             from models.realadaboost import RealAdaBoostClassifier
             algorithm_class = RealAdaBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
+        case "ModestAdaBoost":
+            from models.modestadaboost import ModestAdaBoostClassifier
+            algorithm_class = ModestAdaBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
@@ -113,6 +120,13 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
         case "XWaterBoost":
             from models.waterboost import XWaterBoostClassifier
             algorithm_class = XWaterBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
+        case "XMWaterBoost":
+            from models.waterboost import XMWaterBoostClassifier
+            algorithm_class = XMWaterBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
@@ -208,7 +222,7 @@ class BoostingBenchmarkTrainer:
 
     def fit_and_evaluate(self, X, y, random_state=None, test_size=0.15, results_path="results", test_name="test", multiprocessing=True):
         results = []
-        X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size)   
+        X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size, stratify=y)   
         print(f"== Starting {test_name} ==")
         os.mkdir(os.path.join(results_path,test_name))
         np.savetxt(os.path.join(results_path,test_name,'train-dataset.csv'), np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")

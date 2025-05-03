@@ -23,7 +23,7 @@ class NaiveFilterBoostClassifier:
         delta (0,1): Confidence parameter
         tau (0,1): Relative edge error
         """
-        self.WL = estimator
+        self.estimator = estimator
         self.n_estimators = n_estimators
         self.epsilon = epsilon
         self.delta = delta
@@ -98,7 +98,7 @@ class NaiveFilterBoostClassifier:
                 y_t.append(filtered_object[1])
             
             # Train weak learner
-            h_t = cp.deepcopy(self.WL)
+            h_t = cp.deepcopy(self.estimator)
             h_t.fit(x_t, y_t)
             
             # Compute edge
@@ -155,7 +155,7 @@ class FilterBoostClassifier:
         delta (0,1): Confidence parameter
         tau (0,1): Relative edge error
         """
-        self.WL = estimator
+        self.estimator = estimator
         self.n_estimators = n_estimators
         self.epsilon = epsilon
         self.delta = delta
@@ -178,22 +178,33 @@ class FilterBoostClassifier:
         for t in range(1, self.n_estimators+1):
             self.delta_t = self.delta/(3*t*(t+1))
             self.r = 0
+            ind = np.array([], dtype=np.int64)
             if len(self.estimators) > 0:
-                ind = np.where(self.rng.random(size=X.shape[0]) <= 1 / (1 + np.exp(np.where(y == self.predict(X, sign=False), 1, -1))))
+                while ind.shape[0] < X.shape[0]:
+                    self.r += X.shape[0]
+                    temp = np.where(self.rng.random(size=X.shape[0]) <= 1 / (1 + np.exp(np.where(y == self.predict(X, sign=True), self.predict(X, sign=False), -self.predict(X, sign=False)))))
+                    ind = np.hstack([ind, temp[0]])
             else:
-                ind = np.where(self.rng.random(size=X.shape[0]) >= 0)
-            self.r += X.shape[0]
-             
+                self.r += X.shape[0]
+                ind = np.arange(X.shape[0])
+
 
             # Train weak learner
-            h_t = cp.deepcopy(self.WL)
+            h_t = cp.deepcopy(self.estimator)
             h_t.fit(X[ind], y[ind])
 
             
             # Compute edge
             m, n, u, alpha = 0, 0, 0, np.inf
-            inds = np.where(self.rng.random(size=X.shape[0]) <= 1 / (1 + np.exp(np.where(y == self.predict(X, sign=False), 1, -1))))
-            self.rng.shuffle(inds)
+
+            ind = np.array([], dtype=np.int64)
+            if len(self.estimators) > 0:
+                while ind.shape[0] < X.shape[0]:
+                    temp = np.where(self.rng.random(size=X.shape[0]) <= 1 / (1 + np.exp(np.where(y == self.predict(X, sign=True), self.predict(X, sign=False), -self.predict(X, sign=False)))))
+                    ind = np.hstack([ind, temp[0]])
+            else:
+                ind = np.arange(X.shape[0])
+
             errs = h_t.predict(X[ind]) == y[ind]
             for err in errs:
                 self.r += 1
