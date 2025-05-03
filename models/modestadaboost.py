@@ -28,26 +28,28 @@ class ModestAdaBoostClassifier:
             D_inv_t = 1 - D_t
             D_inv_t = D_inv_t / D_inv_t.sum()
             
-            if type(self.estimator) == DecisionTreeClassifier and h_t.get_depth() == 1:
+            if type(self.estimator) == DecisionTreeClassifier: # NOT TESTED FOR DEPTH != 1
                 pred_leaves = h_t.apply(X)
 
-                probs_pos_t = np.empty(h_t.get_n_leaves())
-                probs_pos_inv_t = np.empty(h_t.get_n_leaves())
-                probs_neg_t = np.empty(h_t.get_n_leaves())
-                probs_neg_inv_t = np.empty(h_t.get_n_leaves())
+                N_nodes = sum([2**x for x in range(h_t.get_depth()+1)])
+                probs_pos_t = np.empty(N_nodes)
+                probs_pos_inv_t = np.empty(N_nodes)
+                probs_neg_t = np.empty(N_nodes)
+                probs_neg_inv_t = np.empty(N_nodes)
                 
-                for leaf_ind in range(1, h_t.get_n_leaves()+1):
-                    probs_pos_t[leaf_ind-1] = np.where((pred_leaves == leaf_ind) *  (h_t.predict(X)==1) * (y==1), D_t, 0).sum() / np.where(leaf_ind == pred_leaves, D_t, 0).sum()
-                    probs_pos_inv_t[leaf_ind-1] = np.where((pred_leaves == leaf_ind) *  (h_t.predict(X)==1) * (y==1), D_inv_t, 0).sum() / np.where(leaf_ind == pred_leaves, D_inv_t, 0).sum()
-                    probs_neg_t[leaf_ind-1] = np.where((pred_leaves == leaf_ind) *  (h_t.predict(X)==0) * (y==0), D_t, 0).sum() / np.where(leaf_ind == pred_leaves, D_t, 0).sum()
-                    probs_neg_inv_t[leaf_ind-1] = np.where((pred_leaves == leaf_ind) *  (h_t.predict(X)==0) * (y==0), D_inv_t, 0).sum() / np.where(leaf_ind == pred_leaves, D_inv_t, 0).sum()
-
-                self.probs_pos.append(probs_pos_t)
-                self.probs_pos_inv.append(probs_pos_inv_t)
-                self.probs_neg.append(probs_neg_t)
-                self.probs_neg_inv.append(probs_neg_inv_t)
+                for prob_ind in range(N_nodes):
+                    leaf_ind = prob_ind + 1
+                    probs_pos_t[prob_ind] = np.where((pred_leaves == leaf_ind) *  (h_t.predict(X)==h_t.classes_[1]) * (y==h_t.classes_[1]), D_t, 0).sum()
+                    probs_pos_inv_t[prob_ind] = np.where((pred_leaves == leaf_ind) *  (h_t.predict(X)==h_t.classes_[1]) * (y==h_t.classes_[1]), D_inv_t, 0).sum()
+                    probs_neg_t[prob_ind] = np.where((pred_leaves == leaf_ind) *  (h_t.predict(X)==h_t.classes_[0]) * (y==h_t.classes_[0]), D_t, 0).sum()
+                    probs_neg_inv_t[prob_ind] = np.where((pred_leaves == leaf_ind) *  (h_t.predict(X)==h_t.classes_[0]) * (y==h_t.classes_[0]), D_inv_t, 0).sum()
             else:
                 raise NotImplementedError
+            
+            self.probs_pos.append(probs_pos_t)
+            self.probs_pos_inv.append(probs_pos_inv_t)
+            self.probs_neg.append(probs_neg_t)
+            self.probs_neg_inv.append(probs_neg_inv_t)
 
             pred_probs_pos_t = np.clip(np.take_along_axis(probs_pos_t, pred_leaves-1, 0), self.eps, 1 - self.eps) 
             pred_probs_pos_inv_t = np.clip(np.take_along_axis(probs_pos_inv_t, pred_leaves-1, 0), self.eps, 1 - self.eps) 
@@ -57,6 +59,7 @@ class ModestAdaBoostClassifier:
             pred = pred_probs_pos_t * (1-pred_probs_pos_inv_t) - pred_probs_neg_t * (1-pred_probs_neg_inv_t)
             D_t *= np.exp(-pred * self.learning_rate * np.where(y>0, 1, -1))
             D_t /= D_t.sum()
+
         return self
 
     def predict(self, X):

@@ -21,22 +21,24 @@ class RealAdaBoostClassifier:
 
             h_t = copy.deepcopy(self.estimator)
             h_t.fit(X, y, sample_weight=D_t)
-            
-            pred_leaves = h_t.apply(X)
-            if type(self.estimator) == DecisionTreeClassifier and h_t.get_depth() == 1:
-                
-                probs_t = np.zeros(h_t.get_n_leaves())
-                for leaf_ind in range(1, h_t.get_n_leaves()+1):
-                    probs_t[leaf_ind-1]= np.where((pred_leaves == leaf_ind) * (y==1), D_t, 0).sum() / np.where(leaf_ind == pred_leaves, D_t, 0).sum()
+            pred_leaf_ind = h_t.apply(X)
+            if type(self.estimator) == DecisionTreeClassifier: # NOT TESTED FOR DEPTH != 1
+                N_nodes = sum([2**x for x in range(h_t.get_depth()+1)])
+
+                probs_t = np.empty(N_nodes)
+                for prob_ind in range(N_nodes):
+                    leaf_ind = prob_ind + 1 
+                    probs_t[prob_ind]= np.where((pred_leaf_ind == leaf_ind) * (y==1), D_t, 0).sum() / np.where(pred_leaf_ind == leaf_ind, D_t, 0).sum() if np.where(pred_leaf_ind == leaf_ind, D_t, 0).sum() != 0 else 0.5
 
                 self.probs.append(probs_t)
+
             else:
                 raise NotImplementedError
 
-            pred_prob = np.take_along_axis(probs_t, pred_leaves-1, 0)
+            pred_prob = np.take_along_axis(probs_t, pred_leaf_ind-1, 0)
             pred = 1/2 * np.log(np.clip(pred_prob, self.eps, 1 - self.eps)/np.clip(1-pred_prob, self.eps, 1 - self.eps))
             
-            self.estimators.append(h_t)
+            self.estimators.append(h_t) 
 
             D_t *= np.exp(-pred * self.learning_rate * np.where(y>0, 1, -1))
             D_t /= D_t.sum()
@@ -65,5 +67,4 @@ class RealAdaBoostClassifier:
         self.n_estimators = params.get("n_estimators", self.n_estimators)
         self.learning_rate = params.get("learning_rate", self.learning_rate)
         self.random_state = params.get("random_state", self.random_state)
-
         return self
