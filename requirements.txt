@@ -7,4 +7,6 @@ lightgbm
 catboost
 matplotlib
 seaborn
-
+ngboost
+imbalanced-learn
+imbalanced-ensemble

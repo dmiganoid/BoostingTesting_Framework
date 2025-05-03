@@ -1,5 +1,5 @@
 {
-  "algorithms": ["AdaBoost", "MadaBoost", "BrownBoost", "CatBoost", "XGBoost", "LightGBM", "SOWAdaBoost"],
+  "algorithms": ["AdaBoost", "MadaBoost", "CatBoost", "XGBoost", "LightGBM", "NGBoost", "RUSBoost", "SMOTEBoost", "SOWAdaBoost"],
   "estimator": {
     "estimator_type": "stump",
     "estimator_params": {
@@ -9,13 +9,12 @@
   "test": {
     "test_size": 0.15,
     "random_state": 42,
-    "N_synthetic_tests": 1,
+    "N_synthetic_tests": 0,
     "synthetic_test_n_samples": 1000,
     "multiprocessing": true,
     "use_predefined_datasets": true,
     "predefined_datasets": [
-      "dataset-generated-0.csv",
-      "raisin_prepared.csv"
+      "corrected.csv"
     ]
   },
   "model": {

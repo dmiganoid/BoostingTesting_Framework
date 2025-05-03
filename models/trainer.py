@@ -178,13 +178,31 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
             param_grid["max_depth"] = algorithm_config['LightGBM']['max_depth']
 
-        # <TODO find way to implement different base estimators for CatBoost, XGBoost, LightGBM>
+        case "NGBoost":
+            from models.ngboost import NGBoostClassifier
+            algorithm_class = NGBoostClassifier
+            param_grid["estimator"] = base_regressor_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
 
+        case "SMOTEBoost":
+            from models.smoteboost import SMOTEBoostClassifier
+            algorithm_class = SMOTEBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+        
+        case "RUSBoost":
+            from imblearn.ensemble import RUSBoostClassifier
+            algorithm_class = RUSBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
 
     return (algorithm_class, param_grid)
 
-class BoostingBenchmarkTrainer:
 
+class BoostingBenchmarkTrainer:
     def __init__(self, algorithms_data):
         self.algorithms_data = algorithms_data
 
