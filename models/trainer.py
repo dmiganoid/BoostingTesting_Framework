@@ -212,6 +212,9 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+        
+        case _:
+            raise ValueError(f"Unknown algorithm: {algorithm}")
 
         case _:
             raise NotImplementedError
