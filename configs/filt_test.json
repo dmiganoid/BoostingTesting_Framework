@@ -9,9 +9,8 @@
   "test": {
     "test_size": 0.15,
     "random_state": 42,
-    "N_synthetic_tests": 1,
-    "synthetic_tests_n_samples": 1000,
-    "multiprocessing" : true,
+    "N_synthetic_tests": 0,
+    "multiprocessing" : false,
     "use_predefined_datasets": true
   },
 
