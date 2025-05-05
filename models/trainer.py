@@ -216,6 +216,7 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
         case _:
             raise ValueError(f"Unknown algorithm: {algorithm}")
 
+
     return (algorithm_class, param_grid)
 
 
