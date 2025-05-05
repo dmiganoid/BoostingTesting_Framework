@@ -9,7 +9,7 @@
     "test": {
       "test_size": 0.2,
       "random_state": 42,
-      "N_synthetic_tests": 0,
+      "N_synthetic_tests": 3,
       "multiprocessing" : true,
       "use_predefined_datasets": true,
       "predefined_datasets" : [
