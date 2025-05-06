@@ -106,7 +106,7 @@ def main_cli():
     parser = argparse.ArgumentParser(description="BoostingTesting_Framework CLI")
     parser.add_argument("--mode", choices=["generate", "train", "plot", "trainplot"], required=True)
     parser.add_argument("--cfg")
-    parser.add_argument("--plot_dirs", nargs='*', default=None, help="Список подпапок в results для построения графиков")
+    parser.add_argument("--dirs", nargs='*', default=None, help="Список подпапок в results для построения графиков")
     parser.add_argument("--mppl", default="True")
 
     args = parser.parse_args()
@@ -122,7 +122,7 @@ def main_cli():
 
     elif args.mode == "plot":
         from utils.plotting import plot_mode
-        plot_mode(only_dirs=args.plot_dirs, multiprocessing=args.mppl)
+        plot_mode(only_dirs=args.dirs, multiprocessing=args.mppl)
 
     elif args.mode == "trainplot":
         cfg_file = args.cfg if args.cfg is not None else 'cfg.json'

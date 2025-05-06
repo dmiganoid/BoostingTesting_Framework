@@ -254,29 +254,23 @@ def plot_results(csv_path, test_dir_path, metrics):
 
     ### compare top test accuracy models from each class
     fig = plt.figure(figsize=(16, 10))
-    plt.axis('off')
+    axis = plt.gca()
     plt.title("Best Models By Test Accuracy")
-    gs = fig.add_gridspec(nrows=10, ncols=10)
-    axes = [fig.add_subplot(gs[0:7, :]), fig.add_subplot(gs[8:, :])]
-    axes[0].set_axisbelow(True)
-    axes[0].grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
+    axis.grid(True, which='both', linestyle='--', linewidth=0.5, zorder=0)
     sns.barplot(data=best_test_accuracy_models, x="algorithm", y="train_accuracy", color='darkblue',
-                zorder=3, ax=axes[0])
+                zorder=3, ax=axis)
     sns.barplot(data=best_test_accuracy_models, x="algorithm", y="test_accuracy", color='lightblue',
-                zorder=4, ax=axes[0])
-    axes[0].legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
-    axes[0].set_xlabel("")
-    axes[0].set_ylabel("Test Accuracy")
-    axes[0].tick_params('x', rotation=20)
-    y_min = np.min([best_test_accuracy_models['train_accuracy'].min(), best_test_accuracy_models['test_accuracy'].min()])
-    y_max = np.max([best_test_accuracy_models['train_accuracy'].max(), best_test_accuracy_models['test_accuracy'].max()])
+                zorder=4, ax=axis)
+    axis.legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
+    axis.set_xlabel("")
+    axis.set_ylabel("Test Accuracy")
+    axis.tick_params('x', rotation=20)
+    y_min = np.min([best_test_accuracy_models['train_accuracy'], best_test_accuracy_models['test_accuracy']])
+    y_max = np.max([best_test_accuracy_models['train_accuracy'], best_test_accuracy_models['test_accuracy']])
     y_range = y_max - y_min
-    axes[0].set_ylim(bottom=y_min - 0.1*y_range, 
-                        top=y_max + 0.1*y_range)
-    textstr = '\n'.join([f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_test_accuracy_models[['model_params_dict']].iterrows()])
-    axes[1].text(0, .95, textstr, transform=axes[1].transAxes, linespacing=1.75, verticalalignment='top', horizontalalignment='left',)
-    axes[1].axis('off')
+    axis.set_ylim(bottom=y_min - 0.1*y_range, top=y_max + 0.1*y_range)
 
+    plt.tight_layout()
     out_png = os.path.join(plot_subdir, f"global_top_test_accuracy.png")
     plt.savefig(out_png, dpi=150)
     plt.close()
@@ -284,35 +278,45 @@ def plot_results(csv_path, test_dir_path, metrics):
 
     ### compare top train accuracy models from each class
     fig = plt.figure(figsize=(16, 10))
-    plt.axis('off')
+    axis = plt.gca()
     plt.title(f"Best Models By Train Accuracy")
-    gs = fig.add_gridspec(nrows=10, ncols=10)
-    axes = [fig.add_subplot(gs[0:7, :]), fig.add_subplot(gs[8:, :])]
-
-    axes[0].set_axisbelow(True)
-    axes[0].grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
+    axis.set_axisbelow(True)
+    axis.grid(True, which='both', linestyle='--', linewidth=0.5, zorder=0)
     sns.barplot(data=best_train_accuracy_models, x="algorithm", y="train_accuracy", color='darkblue',
-                zorder=3, ax=axes[0])
+                zorder=3, ax=axis)
     sns.barplot(data=best_train_accuracy_models, x="algorithm", y="test_accuracy", color='lightblue',
-                zorder=4, ax=axes[0])
-    axes[0].legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
-    axes[0].tick_params('x', rotation=20)
-    axes[0].set_xlabel("")
-    axes[0].set_ylabel("Train Accuracy") 
-    y_min = np.min([best_train_accuracy_models['train_accuracy'].min(), best_train_accuracy_models['test_accuracy'].min()])
-    y_max = np.max([best_train_accuracy_models['train_accuracy'].max(), best_train_accuracy_models['test_accuracy'].max()])
+                zorder=4, ax=axis)
+    axis.legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
+    axis.tick_params('x', rotation=20)
+    axis.set_xlabel("")
+    axis.set_ylabel("Train Accuracy") 
+    y_min = np.min([best_train_accuracy_models['train_accuracy'], best_train_accuracy_models['test_accuracy']])
+    y_max = np.max([best_train_accuracy_models['train_accuracy'], best_train_accuracy_models['test_accuracy']])
     y_range = y_max - y_min
-    axes[0].set_ylim(bottom=y_min - 0.1*y_range, 
+    axis.set_ylim(bottom=y_min - 0.1*y_range, 
                         top=y_max + 0.1*y_range)
-    textstr = '\n'.join([f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_train_accuracy_models[['model_params_dict']].iterrows()])
-    axes[1].text(0, .95, textstr, transform=axes[1].transAxes, linespacing=1.75, verticalalignment='top', horizontalalignment='left',)
-    axes[1].axis('off')
     
     out_png = os.path.join(plot_subdir, f"global_top_train_accuracy.png")
+    plt.tight_layout()
     plt.savefig(out_png, dpi=150)
     plt.close()
 
-    
+    ### save best models params
+    train_params_str = [f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_train_accuracy_models[['model_params_dict']].iterrows()]
+    test_params_str = [f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_test_accuracy_models[['model_params_dict']].iterrows()]
+
+    with open(os.path.join(plot_subdir, f"global_top_params.csv"), "w") as f:
+        f.write("Top Train Models:\n")
+        for st in train_params_str:
+            f.write(f"{st}\n")
+        f.write("\nTop Test Models:\n")
+        for st in test_params_str:
+            f.write(f"{st}\n")
+        
+
+
+
+
     ### Train test scatter plots for top train accuracy and top test accuracy models from each class
     pred_dir=os.path.join(test_dir_path,"pred")
     
@@ -363,6 +367,7 @@ def plot_results(csv_path, test_dir_path, metrics):
                 plt.tight_layout()
                 plt.savefig(os.path.join(plot_subdir,f"{algo_}_train-test-preds.png"),dpi=150)
                 plt.close()
+
 
 
 if __name__ == "__main__":
