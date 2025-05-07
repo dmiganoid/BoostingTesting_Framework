@@ -17,7 +17,7 @@ class AdaBoostClassifier:
         self.betas = []
         n_samples = X.shape[0]
 
-        D_0 = np.ones(n_samples) / n_samples
+        D_0 = np.ones(n_samples,dtype=np.float256) / n_samples
         B_t = np.ones(n_samples)
         D_t = D_0
         for t in range(self.n_estimators):
@@ -26,8 +26,8 @@ class AdaBoostClassifier:
             h_t.fit(X, y, sample_weight=D_t)
             pred = h_t.predict(X)
 
-            err_t = np.sum(D_t * (pred != y)) - 1e-10
-            alpha_t = self.learning_rate * 0.5 * np.log((1-err_t)/err_t)
+            err_t = np.sum(D_t * (pred != y))
+            alpha_t = self.learning_rate * 0.5 * np.log((1-err_t +1e-10)/(err_t+1e-10))
             beta_t = np.exp(-alpha_t)
 
             self.alphas.append(alpha_t)

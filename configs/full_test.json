@@ -13,18 +13,6 @@
       "multiprocessing" : true,
       "use_predefined_datasets": true,
       "predefined_datasets" : [
-        "dataset-generated-0.csv", 
-        "dataset-generated-1.csv",
-        "dataset-generated-2.csv",
-        "dataset-generated-3.csv",
-        "dataset-generated-4.csv",
-        "dataset-generated-5.csv",
-        "dataset-generated-6.csv",
-        "dataset-generated-7.csv",
-        "dataset-generated-8.csv",
-        "dataset-generated-9.csv", 
-        "dataset-generated-10.csv",
-        "keel_ecoli3_prepared.csv",
         "keel_new-thyroid1_prepared.csv",
         "keel_page-blocks0_prepared.csv",
         "keel_segment0_prepared.csv",
@@ -38,7 +26,7 @@
   
     "model": {
       "common": {
-        "n_estimators": [ 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 96, 128, 160, 192, 224, 256, 384, 512, 768, 1024, 1280, 1536, 1792, 2048, 4096, 8192],
+        "n_estimators": [ 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 96, 128, 160, 192, 224, 256, 384, 512, 768, 1024, 1280, 1536, 1792, 2048],
         "learning_rate":  [ 0.001, 0.008, 0.032, 0.128, 0.256, 0.512, 1]
       },
       "BrownBoost": {

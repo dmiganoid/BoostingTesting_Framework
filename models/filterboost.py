@@ -53,13 +53,15 @@ class NaiveFilterBoostClassifier:
         Returns (x, y) and previous H (simplified as F).
         """
         self.r += 1
-        # delta_t_cor = self.delta_t / (self.r * (self.r + 1))
-        for _ in range(1000000): #for i in range(int(np.ceil(2/self.epsilon*np.log(1 / delta_t_cor)))):
+        delta_t_cor = self.delta_t / (self.r * (self.r + 1))
+        for _ in range(int(np.ceil(2/self.epsilon*np.log(1 / delta_t_cor)))):
             x, y = self.oracle()
             q_t = 1 / (1 + np.exp(y * (self.compute_F(x.reshape(1, -1))[0] if self.estimators else 0.0)))
             if np.random.random() < q_t:  # Sample with probability q_t
                 return x, y
-
+        self.converged = True
+        return None, None
+    
     def getEdge(self, new_estimator):
         """
         Compute edge γ_t using sampling from Filter.
@@ -69,12 +71,12 @@ class NaiveFilterBoostClassifier:
 
         while abs(u) < alpha * (1 + 1 / self.tau) and n < self.oracle.X.shape[0]:
             x, y = self.Filter()
+            if self.converged:
+                return None
             n += 1
             m += new_estimator.predict(x.reshape(1, -1)) == y  # I(h_t(x) = y)
             u = m / n - 0.5
             alpha = np.sqrt(0.5/n * np.log((n * (n + 1)) / self.delta_t))
-        if n == self.oracle.X.shape[0]:
-            self.converged = False
         return u / (1 + self.tau)
 
 
@@ -83,7 +85,7 @@ class NaiveFilterBoostClassifier:
         self.alphas = []
         self.estimators = []
         if self.m_t is None:
-            self.m_t = lambda t: X.shape[0] / 4
+            self.m_t = lambda t: X.shape[0]
         
         self.oracle = Oracle(X, np.where(y, 1, -1), self.random_state)
         self.oracle = Oracle(X, y, self.random_state)
@@ -104,14 +106,16 @@ class NaiveFilterBoostClassifier:
             
             # Compute edge
             gamma_t = self.getEdge(h_t)
-
+            if self.converged:
+                return
             # Compute alpha
             alpha_t = 0.5 * np.log((1/2 + gamma_t) / (1/2 - gamma_t - 1e-10))
 
             # Update F
             self.estimators.append(h_t)
             self.alphas.append(alpha_t*self.learning_rate)
-
+        
+        return self
 
     def predict(self, X, sign=True):
         y = np.zeros(X.shape[0])

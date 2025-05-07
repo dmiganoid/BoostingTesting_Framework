@@ -96,7 +96,8 @@ def plot_mode(only_dirs=None, multiprocessing=True):
 
 
 def plot_results(csv_path, test_dir_path, metrics):
-
+    train_file = os.path.join(test_dir_path, "train-dataset.csv")
+    test_file = os.path.join(test_dir_path, "test-dataset.csv")
     df = pd.read_csv(csv_path, sep=",")
     if df.empty or "algorithm" not in df.columns:
         return
@@ -221,7 +222,7 @@ def plot_results(csv_path, test_dir_path, metrics):
                                     linewidth=0, cmap=cm.coolwarm)
                 plt.xticks(ticks=plt.xticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.xticks()[0]])
                 plt.yticks(ticks=plt.yticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.yticks()[0]])
-                ax.view_init(elev=0, azim=45)
+                ax.view_init(elev=0, azim=225)
                 plt.xlabel(make_label(param_1))
                 plt.ylabel(make_label(param_2))
                 plt.title(f"Projection of Test Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
@@ -244,7 +245,7 @@ def plot_results(csv_path, test_dir_path, metrics):
                 fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
                 surf = ax.plot_surface(X, Y, Z_train,
                                     linewidth=0, cmap=cm.coolwarm)
-                ax.view_init(elev=0, azim=45)
+                ax.view_init(elev=0, azim=225)
                 plt.title(f"Projection of Train Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
                 plt.tight_layout()
                 out_png = os.path.join(plot_subdir, f"{algorithm}-3d-proj-train_accuracy-vs-{param_1}-x-{param_2}.png")
@@ -321,8 +322,6 @@ def plot_results(csv_path, test_dir_path, metrics):
     pred_dir=os.path.join(test_dir_path,"pred")
     
     if os.path.isdir(pred_dir):
-        train_file = os.path.join(test_dir_path, "train-dataset.csv")
-        test_file = os.path.join(test_dir_path, "test-dataset.csv")
         if not (os.path.exists(train_file) and os.path.exists(test_file)):
             return
 
