@@ -25,8 +25,8 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
         outp['estimator'] = str(outp['estimator'])
     classes = np.unique(y_train)
     classes_n_obj = [np.where(y_train==classes[0], 1, 0).sum() / y_train.shape[0], np.where(y_train==classes[1], 1, 0).sum() / y_train.shape[0]]
-    major_class = classes[np.argmax(classes_n_obj)]
-    minor_class = classes[np.argmin(classes_n_obj)]
+    major_class = np.argmax(classes_n_obj)
+    minor_class = np.argmin(classes_n_obj)
     train_class_weights = np.where(y_train==major_class, 1, classes_n_obj[major_class]/classes_n_obj[minor_class])
     test_class_weights = np.where(y_test==major_class, 1, classes_n_obj[major_class]/classes_n_obj[minor_class])
     return {

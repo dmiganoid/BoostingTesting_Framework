@@ -17,7 +17,7 @@ class AdaBoostClassifier:
         self.betas = []
         n_samples = X.shape[0]
 
-        D_0 = np.ones(n_samples,dtype=np.float256) / n_samples
+        D_0 = np.ones(n_samples) / n_samples
         B_t = np.ones(n_samples)
         D_t = D_0
         for t in range(self.n_estimators):
