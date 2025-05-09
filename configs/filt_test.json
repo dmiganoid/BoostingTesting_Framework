@@ -1,5 +1,5 @@
 {
-  "algorithms": ["FilterBoost", "AdaBoost"],
+  "algorithms": ["XWaterBoost", "AdaBoost"],
 
   "estimator": {
     "estimator_type": "stump",
@@ -14,7 +14,6 @@
     "use_predefined_datasets": true,
     "predefined_datasets" : [
         "dataset-generated-0.csv", 
-        "dataset-generated-1.csv",
         "dataset-generated-2.csv",
         "dataset-generated-3.csv",
         "dataset-generated-4.csv",
@@ -24,7 +23,6 @@
         "dataset-generated-8.csv",
         "dataset-generated-9.csv", 
         "dataset-generated-10.csv",
-        "keel_ecoli3_prepared.csv",
         "keel_new-thyroid1_prepared.csv",
         "keel_page-blocks0_prepared.csv",
         "keel_segment0_prepared.csv",

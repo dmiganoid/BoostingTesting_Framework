@@ -23,12 +23,15 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
     outp = params
     if 'estimator' in outp:
         outp['estimator'] = str(outp['estimator'])
-    classes = np.unique(y_train)
-    classes_n_obj = [np.where(y_train==classes[0], 1, 0).sum() / y_train.shape[0], np.where(y_train==classes[1], 1, 0).sum() / y_train.shape[0]]
-    major_class = np.argmax(classes_n_obj)
-    minor_class = np.argmin(classes_n_obj)
-    train_class_weights = np.where(y_train==major_class, 1, classes_n_obj[major_class]/classes_n_obj[minor_class])
-    test_class_weights = np.where(y_test==major_class, 1, classes_n_obj[major_class]/classes_n_obj[minor_class])
+    classes = np.sort(np.unique(y_train))
+    class_proportions = [np.where(y_train==classes[0], 1, 0).sum() / y_train.shape[0], np.where(y_train==classes[1], 1, 0).sum() / y_train.shape[0]]
+    major_class = np.argmax(class_proportions)
+    minor_class = np.argmin(class_proportions)
+    train_class_weights = np.where(y_train==major_class, 1, class_proportions[major_class]/class_proportions[minor_class])
+    test_class_weights = np.where(y_test==major_class, 1, class_proportions[major_class]/class_proportions[minor_class])
+    minor_class_test_ind = np.where(y_test==classes[minor_class])
+    major_class_test_ind = np.where(y_test==classes[major_class])   
+
     return {
         "algorithm": algorithm_class.__name__,
         "file_postfix": f"{algorithm_class.__name__}{ind}",
@@ -37,6 +40,8 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
         "inference_time_sec": inf_time,
         "unweighted_train_accuracy": accuracy_score(model.predict(X_train), y_train),
         "unweighted_test_accuracy": accuracy_score(model.predict(X_test), y_test),
+        "minor_class_test_accuracy": accuracy_score(model.predict(X_test)[minor_class_test_ind], y_test[minor_class_test_ind]),
+        "major_class_test_accuracy": accuracy_score(model.predict(X_test)[major_class_test_ind], y_test[major_class_test_ind]),
         "train_accuracy": accuracy_score(model.predict(X_train), y_train, sample_weight=train_class_weights/train_class_weights.sum()),
         "test_accuracy": accuracy_score(model.predict(X_test), y_test, sample_weight=test_class_weights/test_class_weights.sum())
     }

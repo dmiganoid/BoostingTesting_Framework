@@ -55,7 +55,7 @@ def plot_mode(only_dirs=None, multiprocessing=True):
     else:
         top_level_dirs = [d for d in os.listdir(results_root) if os.path.isdir(os.path.join(results_root, d))]
 
-    metrics = ["test_accuracy","train_accuracy","train_time_sec","inference_time_sec"]
+    metrics = ["test_accuracy","train_accuracy","train_time_sec","inference_time_sec", "major_class_test_accuracy", "minor_class_test_accuracy"]
 
     for time_dir in top_level_dirs:
         time_dir_path = os.path.join(results_root, time_dir)
@@ -132,21 +132,27 @@ def plot_results(csv_path, test_dir_path, metrics):
             x_data = []
             y_test_data = []
             y_train_data = []
+            y_major_test = []
+            y_minor_test = []
             for _, algorithm_data in df_algorithm.iterrows():
                 if compare_dicts(algorithm_data["model_params_dict"], best_model["model_params_dict"], [param]):
                     x_data.append(algorithm_data['model_params_dict'][param])
                     y_train_data.append(algorithm_data['train_accuracy'])
                     y_test_data.append(algorithm_data['test_accuracy'])
-
+                    y_major_test.append(algorithm_data['major_class_test_accuracy'])
+                    y_minor_test.append(algorithm_data['minor_class_test_accuracy'])
             sort_ind = np.argsort(x_data, axis=0)
             x_data = np.take_along_axis(np.array(x_data), sort_ind, axis=0)
             y_train_data = np.take_along_axis(np.array(y_train_data), sort_ind, axis=0)
             y_test_data = np.take_along_axis(np.array(y_test_data), sort_ind, axis=0)
+            y_major_test_data = np.take_along_axis(np.array(y_major_test), sort_ind, axis=0)
+            y_minor_test_data = np.take_along_axis(np.array(y_minor_test), sort_ind, axis=0)
             if x_data.shape[0] < 2:
                 continue
+            # Train and Test Accuracy vs param
             fig = plt.figure(figsize=(12, 8))
             ax = plt.gca()
-            plt.title(f"Test Accuracy vs {param}")
+            plt.title(f"Train and test accuracy vs {param}")
 
             ax.set_axisbelow(True)
             ax.grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
@@ -156,7 +162,7 @@ def plot_results(csv_path, test_dir_path, metrics):
             if x_data.max() / x_data.min() > 100:
                 ax.set_xscale('log')
             ax.set_xlabel(make_label(param))
-            ax.set_ylabel("Train Accuracy")
+            ax.set_ylabel("Accuracy")
 
             y_min = np.min((y_test_data, y_train_data))
             y_max = np.max((y_test_data, y_train_data))
@@ -169,6 +175,35 @@ def plot_results(csv_path, test_dir_path, metrics):
             out_png = os.path.join(plot_subdir, f"{algorithm}-line_accuracy-vs-{param}.png")
             plt.savefig(out_png, dpi=150)
             plt.close()
+
+            # Major and Minor Accuracy vs param
+            fig = plt.figure(figsize=(12, 8))
+            ax = plt.gca()
+            plt.title(f"Test accuracy on major and minor class vs {param}")
+
+            ax.set_axisbelow(True)
+            ax.grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
+            ax.plot(x_data, y_minor_test_data, 'r', marker="o", label="Accuracy on minor class")
+            ax.plot(x_data, y_major_test_data, 'b', marker="o", label="Accuracy on major class")
+
+            if x_data.max() / x_data.min() > 100:
+                ax.set_xscale('log')
+            ax.set_xlabel(make_label(param))
+            ax.set_ylabel("Accuracy")
+
+            y_min = np.min((y_minor_test_data, y_major_test_data))
+            y_max = np.max((y_minor_test_data, y_major_test_data))
+            y_range = y_max - y_min
+
+            ax.set_ylim(bottom=y_min - 0.1*y_range, top=y_max + 0.1*y_range)
+            ax.legend()
+
+            plt.tight_layout()
+            out_png = os.path.join(plot_subdir, f"{algorithm}-line_class_accuracy-vs-{param}.png")
+            plt.savefig(out_png, dpi=150)
+            plt.close()
+
+
 
         # <needs work> 3d plot test_accuracy vs (learning_rate x n_estimators) for best_models
         for i in range(len(params_to_compare)-1):
