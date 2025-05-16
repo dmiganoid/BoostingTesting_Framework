@@ -60,6 +60,7 @@ def run_benchmark(cfg_file):
 
             trainer.fit_and_evaluate(
                 X, y,
+                validation_size=configuration['test']['validation_size'],
                 test_size=configuration['test']['test_size'],
                 random_state=configuration['test']['random_state'],
                 results_path=results_path,
@@ -76,6 +77,7 @@ def run_benchmark(cfg_file):
         test_name = f"random-{i}"
         trainer.fit_and_evaluate(
             X, y,
+            validation_size=configuration['test']['validation_size'],
             test_size=configuration['test']['test_size'],
             random_state=configuration['test']['random_state'],
             results_path=results_path,

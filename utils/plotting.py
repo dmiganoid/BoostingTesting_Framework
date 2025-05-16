@@ -115,15 +115,15 @@ def plot_results(csv_path, test_dir_path, metrics):
     algorithms = df["algorithm"].unique()
 
     # PARAMETERS
-    best_test_accuracy_models = df.loc[[df[df['algorithm'] == algorithm]['test_accuracy'].idxmax() for algorithm in algorithms]]
-    best_test_accuracy_models.set_index('algorithm', inplace=True)
+    best_validation_accuracy_models = df.loc[[df[df['algorithm'] == algorithm]['validation_accuracy'].idxmax() for algorithm in algorithms]]
+    best_validation_accuracy_models.set_index('algorithm', inplace=True)
     best_train_accuracy_models = df.loc[[df[df['algorithm'] == algorithm]['train_accuracy'].idxmax() for algorithm in algorithms]]
     best_train_accuracy_models.set_index('algorithm', inplace=True)
     params_to_compare = ["n_estimators", "learning_rate", "c", "delta", "epsilon", "tau",'iterations' ]
 
 
     for algorithm in algorithms:
-        best_model = best_test_accuracy_models.loc[algorithm]
+        best_model = best_validation_accuracy_models.loc[algorithm]
         df_algorithm = df[df["algorithm"] == algorithm]
         ### line plots for the best test accuracy models
         for param in params_to_compare:
@@ -291,18 +291,18 @@ def plot_results(csv_path, test_dir_path, metrics):
     ### compare top test accuracy models from each class
     fig = plt.figure(figsize=(16, 10))
     axis = plt.gca()
-    plt.title("Best Models By Test Accuracy")
+    plt.title("Best Models By Validation Accuracy")
     axis.grid(True, which='both', linestyle='--', linewidth=0.5, zorder=0)
-    sns.barplot(data=best_test_accuracy_models, x="algorithm", y="train_accuracy", color='darkblue',
+    sns.barplot(data=best_validation_accuracy_models, x="algorithm", y="train_accuracy", color='darkblue',
                 zorder=3, ax=axis)
-    sns.barplot(data=best_test_accuracy_models, x="algorithm", y="test_accuracy", color='lightblue',
+    sns.barplot(data=best_validation_accuracy_models, x="algorithm", y="test_accuracy", color='lightblue',
                 zorder=4, ax=axis)
     axis.legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
     axis.set_xlabel("")
     axis.set_ylabel("Test Accuracy")
     axis.tick_params('x', rotation=20)
-    y_min = np.min([best_test_accuracy_models['train_accuracy'], best_test_accuracy_models['test_accuracy']])
-    y_max = np.max([best_test_accuracy_models['train_accuracy'], best_test_accuracy_models['test_accuracy']])
+    y_min = np.min([best_validation_accuracy_models['train_accuracy'], best_validation_accuracy_models['test_accuracy']])
+    y_max = np.max([best_validation_accuracy_models['train_accuracy'], best_validation_accuracy_models['test_accuracy']])
     y_range = y_max - y_min
     axis.set_ylim(bottom=y_min - 0.1*y_range, top=y_max + 0.1*y_range)
 
@@ -339,7 +339,7 @@ def plot_results(csv_path, test_dir_path, metrics):
 
     ### save best models params
     train_params_str = [f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_train_accuracy_models[['model_params_dict']].iterrows()]
-    test_params_str = [f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_test_accuracy_models[['model_params_dict']].iterrows()]
+    test_params_str = [f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_validation_accuracy_models[['model_params_dict']].iterrows()]
 
     with open(os.path.join(plot_subdir, f"global_top_params.csv"), "w") as f:
         f.write("Top Train Models:\n")
@@ -369,7 +369,7 @@ def plot_results(csv_path, test_dir_path, metrics):
         X_test = test_data[:, :-1]
 
         if X_test.shape[1] == 2:
-            for algo_,row_ in best_test_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
+            for algo_,row_ in best_validation_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
                 postfix=row_["file_postfix"]
 
                 pred_train_file=os.path.join(pred_dir,f"train_{postfix}.csv")

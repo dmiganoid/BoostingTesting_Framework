@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split, ParameterGrid
 from multiprocessing import Pool
 from sklearn.metrics import accuracy_score
 
-def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, results_path, ind="", random_state=None, save_predictions=True):
+def train_test_model(algorithm_class, params, X_train, X_validation, X_test, y_train, y_validation, y_test, results_path, ind="", random_state=None, save_predictions=True):
     model = algorithm_class(**params)
     st = time.time()
     model.fit(X_train, y_train)
@@ -23,12 +23,19 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
     outp = params
     if 'estimator' in outp:
         outp['estimator'] = str(outp['estimator'])
+
     classes = np.sort(np.unique(y_train))
     class_proportions = [np.where(y_train==classes[0], 1, 0).sum() / y_train.shape[0], np.where(y_train==classes[1], 1, 0).sum() / y_train.shape[0]]
     major_class = np.argmax(class_proportions)
     minor_class = np.argmin(class_proportions)
+
     train_class_weights = np.where(y_train==major_class, 1, class_proportions[major_class]/class_proportions[minor_class])
+    validation_class_weights = np.where(y_validation==major_class, 1, class_proportions[major_class]/class_proportions[minor_class])
     test_class_weights = np.where(y_test==major_class, 1, class_proportions[major_class]/class_proportions[minor_class])
+    train_class_weights /= train_class_weights.sum()
+    validation_class_weights /= validation_class_weights.sum()
+    test_class_weights /= test_class_weights.sum()
+
     minor_class_test_ind = np.where(y_test==classes[minor_class])
     major_class_test_ind = np.where(y_test==classes[major_class])   
 
@@ -39,11 +46,13 @@ def train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, 
         "train_time_sec": tr_time,
         "inference_time_sec": inf_time,
         "unweighted_train_accuracy": accuracy_score(model.predict(X_train), y_train),
+        "unweighted_validation_accuracy": accuracy_score(model.predict(X_validation), y_validation),
         "unweighted_test_accuracy": accuracy_score(model.predict(X_test), y_test),
+        "train_accuracy": accuracy_score(model.predict(X_train), y_train, sample_weight=train_class_weights),
+        "validation_accuracy" : accuracy_score(model.predict(X_validation), y_validation, sample_weight=validation_class_weights),
+        "test_accuracy": accuracy_score(model.predict(X_test), y_test, sample_weight=test_class_weights),
         "minor_class_test_accuracy": accuracy_score(model.predict(X_test)[minor_class_test_ind], y_test[minor_class_test_ind]),
-        "major_class_test_accuracy": accuracy_score(model.predict(X_test)[major_class_test_ind], y_test[major_class_test_ind]),
-        "train_accuracy": accuracy_score(model.predict(X_train), y_train, sample_weight=train_class_weights/train_class_weights.sum()),
-        "test_accuracy": accuracy_score(model.predict(X_test), y_test, sample_weight=test_class_weights/test_class_weights.sum())
+        "major_class_test_accuracy": accuracy_score(model.predict(X_test)[major_class_test_ind], y_test[major_class_test_ind])
     }
 
 def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state):
@@ -237,13 +246,17 @@ class BoostingBenchmarkTrainer:
     def __init__(self, algorithms_data):
         self.algorithms_data = algorithms_data
 
-    def fit_and_evaluate(self, X, y, random_state=None, test_size=0.15, results_path="results", test_name="test", multiprocessing=True):
+    def fit_and_evaluate(self, X, y, random_state=None, test_size=0.15, validation_size=0.15, results_path="results", test_name="test", multiprocessing=True):
         results = []
-        X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size, stratify=y)   
+        X_train_validation, X_test, y_train_validation, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size, stratify=y)   
+        X_train, X_validation, y_train, y_validation = train_test_split(X_train_validation, y_train_validation, random_state=random_state, test_size=validation_size/(1-test_size), stratify=y_train_validation)
         print(f"== Starting {test_name} ==")
+        
         os.mkdir(os.path.join(results_path,test_name))
         np.savetxt(os.path.join(results_path,test_name,'train-dataset.csv'), np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
         np.savetxt(os.path.join(results_path,test_name,'test-dataset.csv'), np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")
+        np.savetxt(os.path.join(results_path,test_name,'validation-dataset.csv'), np.hstack((X_validation, y_validation.reshape(X_validation.shape[0], 1))), delimiter=",")
+
         save_predictions = ('random' not in test_name)
         if save_predictions:
             os.mkdir(os.path.join(results_path, test_name, 'pred'))
@@ -256,14 +269,14 @@ class BoostingBenchmarkTrainer:
                 for algorithm_class, algorithm_param_grid in self.algorithms_data:
                     print(f"= Testing {algorithm_class.__name__} =")
                     for ind, params in enumerate(ParameterGrid(algorithm_param_grid)):
-                        tasks.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name)], kwds={"ind" : ind, "random_state" : random_state, "save_predictions" : save_predictions}))           
+                        tasks.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X_train, X_validation, X_test, y_train, y_validation, y_test, os.path.join(results_path, test_name)], kwds={"ind" : ind, "random_state" : random_state, "save_predictions" : save_predictions}))           
                 for t in tasks:
                     results.append(t.get(timeout=None))
         else:
             for algorithm_class, algorithm_param_grid in self.algorithms_data:
                 print(f"= Testing {algorithm_class.__name__} =")
                 for ind, params in enumerate(ParameterGrid(algorithm_param_grid)):
-                    results.append(train_test_model(algorithm_class, params, X_train, X_test, y_train, y_test, os.path.join(results_path, test_name), ind=ind, random_state=random_state, save_predictions=save_predictions))
+                    results.append(train_test_model(algorithm_class, params, X_train, X_validation, X_test, y_train, y_validation, y_test, os.path.join(results_path, test_name), ind=ind, random_state=random_state, save_predictions=save_predictions))
         
         print("= Writing results =")
         pd.DataFrame(results).to_csv(os.path.join(results_path, test_name, 'results.csv'), index=False, sep=",")

@@ -1,5 +1,5 @@
 {
-  "algorithms": ["XWaterBoost", "AdaBoost"],
+  "algorithms": ["FilterBoost", "AdaBoost"],
 
   "estimator": {
     "estimator_type": "stump",
