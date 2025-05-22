@@ -49,20 +49,16 @@ def plot_mode(only_dirs=None, multiprocessing=True):
     if not os.path.exists(results_root):
         print("No results folder found.")
         return
-
     if only_dirs is not None and len(only_dirs) > 0:
         top_level_dirs = [d for d in only_dirs if os.path.isdir(os.path.join(results_root, d))]
     else:
         top_level_dirs = [d for d in os.listdir(results_root) if os.path.isdir(os.path.join(results_root, d))]
 
     metrics = ["test_accuracy","train_accuracy","train_time_sec","inference_time_sec", "major_class_test_accuracy", "minor_class_test_accuracy"]
-
     for time_dir in top_level_dirs:
         time_dir_path = os.path.join(results_root, time_dir)
         if not os.path.isdir(time_dir_path):
             continue
-
-
         if multiprocessing:
             cpus = cpu_count(logical=False)
             if type(multiprocessing) is int:
@@ -120,7 +116,6 @@ def plot_results(csv_path, test_dir_path, metrics):
     best_train_accuracy_models = df.loc[[df[df['algorithm'] == algorithm]['train_accuracy'].idxmax() for algorithm in algorithms]]
     best_train_accuracy_models.set_index('algorithm', inplace=True)
     params_to_compare = ["n_estimators", "learning_rate", "c", "delta", "epsilon", "tau",'iterations' ]
-
 
     for algorithm in algorithms:
         best_model = best_validation_accuracy_models.loc[algorithm]
@@ -336,6 +331,49 @@ def plot_results(csv_path, test_dir_path, metrics):
     plt.tight_layout()
     plt.savefig(out_png, dpi=150)
     plt.close()
+
+
+    # Test accuracy vs param
+    fig = plt.figure(figsize=(12, 8))
+    ax = plt.gca()
+    for algorithm in algorithms:
+        best_model = best_validation_accuracy_models.loc[algorithm]
+        df_algorithm = df[df["algorithm"] == algorithm]
+        param = "n_estimators"
+        if param not in best_model["model_params_dict"].keys():
+            continue
+        x_data = []
+        y_test_data = []
+        for _, algorithm_data in df_algorithm.iterrows():
+            if compare_dicts(algorithm_data["model_params_dict"], best_model["model_params_dict"], [param]):
+                x_data.append(algorithm_data['model_params_dict'][param])
+                y_test_data.append(algorithm_data['test_accuracy'])
+
+        sort_ind = np.argsort(x_data, axis=0)
+        x_data = np.take_along_axis(np.array(x_data), sort_ind, axis=0)
+        y_test_data = np.take_along_axis(np.array(y_test_data), sort_ind, axis=0)
+        if x_data.shape[0] < 2:
+            continue
+        # All algos Test Accuracy vs param
+        ax.plot(x_data, 1-y_test_data, marker="o", label=algorithm)
+
+    plt.title(f"Error Rate vs {param}")
+
+    ax.set_axisbelow(True)
+    ax.grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
+
+    if x_data.max() / x_data.min() > 100:
+        ax.set_xscale('log')
+    ax.set_xlabel(make_label(param))
+    ax.set_ylabel("Accuracy")
+
+    ax.legend()
+
+    plt.tight_layout()
+    out_png = os.path.join(plot_subdir, f"all_algorithms-error_rate-vs-{param}.png")
+    plt.savefig(out_png, dpi=150)
+    plt.close()
+
 
     ### save best models params
     train_params_str = [f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in best_train_accuracy_models[['model_params_dict']].iterrows()]

@@ -1,5 +1,5 @@
 {
-  "algorithms": ["GradientBoost", "AdaBoost", "MadaBoost", "BrownBoost", "FilterBoost", "RealAdaBoost", "LogitBoost", "ModestAdaBoost", "XWaterBoost"],
+  "algorithms": ["GradientBoost", "AdaBoost", "MadaBoost", "BrownBoost", "RealAdaBoost", "LogitBoost", "ModestAdaBoost", "XWaterBoost"],
 
   "estimator": {
     "estimator_type": "stump",
@@ -7,9 +7,10 @@
   },
 
   "test": {
-    "test_size": 0.2,
+    "test_size": 0.3,
+    "validation_size":0.2,
     "random_state": 42,
-    "N_synthetic_tests": 3,
+    "N_synthetic_tests": 0,
     "multiprocessing" : true,
     "use_predefined_datasets": true
     },
@@ -23,8 +24,6 @@
       "c": [ 0.2, 0.25, 0.35, 0.5, 0.75, 1, 2, 3, 4 ],
       "convergence_criterion": [0.001] 
     },
-    "MadaBoost": {},
-
     "CatBoost": {
       "depth": [1]
     },

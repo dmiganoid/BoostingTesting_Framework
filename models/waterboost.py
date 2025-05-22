@@ -48,6 +48,8 @@ class MWaterBoostClassifier:
                 increased_weight_d = np.where(B_t > 1, B_t-1, 0)
                 if increased_weight_d.sum() > 0:
                     D_t += decreased_weight * increased_weight_d / increased_weight_d.sum()
+            if D_t.sum()==0:
+                return self
             D_t /= D_t.sum() #if no weights to increase or sum of D_t > W  
 
         return self

@@ -35,6 +35,8 @@ class AdaBoostClassifier:
 
             B_t *= np.where(pred==y, beta_t, 1/beta_t)
             D_t = D_0*B_t
+            if D_t.sum()==0:
+                return self
             D_t /= D_t.sum()
         return self
 

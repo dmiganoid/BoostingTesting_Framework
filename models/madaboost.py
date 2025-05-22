@@ -42,6 +42,8 @@ class MadaBoostClassifier:
 
             B_t *= np.where(pred==y, beta_t, 1/beta_t)
             D_t = np.where( B_t <= 1, D_0*B_t, D_0)
+            if D_t.sum()==0:
+                return self
             D_t /= D_t.sum()
         return self
 
