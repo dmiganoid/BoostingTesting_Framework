@@ -147,7 +147,7 @@ def plot_results(csv_path, test_dir_path, metrics):
             # Train and Test Accuracy vs param
             fig = plt.figure(figsize=(12, 8))
             ax = plt.gca()
-            plt.title(f"Train and test accuracy vs {param}")
+            plt.title(f"Train and test accuracy vs {make_label(param)}")
 
             ax.set_axisbelow(True)
             ax.grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
@@ -174,7 +174,7 @@ def plot_results(csv_path, test_dir_path, metrics):
             # Major and Minor Accuracy vs param
             fig = plt.figure(figsize=(12, 8))
             ax = plt.gca()
-            plt.title(f"Test accuracy on major and minor class vs {param}")
+            plt.title(f"Test accuracy on major and minor class vs {make_label(param)}")
 
             ax.set_axisbelow(True)
             ax.grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
@@ -250,8 +250,10 @@ def plot_results(csv_path, test_dir_path, metrics):
                 fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
                 surf = ax.plot_surface(X, Y, Z_test,
                                     linewidth=0, cmap=cm.coolwarm)
-                plt.xticks(ticks=plt.xticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.xticks()[0]])
-                plt.yticks(ticks=plt.yticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.yticks()[0]])
+                if x_logscale:
+                    plt.xticks(ticks=plt.xticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.xticks()[0]])
+                if y_logscale:
+                    plt.yticks(ticks=plt.yticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.yticks()[0]])
                 ax.view_init(elev=0, azim=225)
                 plt.xlabel(make_label(param_1))
                 plt.ylabel(make_label(param_2))
@@ -263,8 +265,10 @@ def plot_results(csv_path, test_dir_path, metrics):
                 fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
                 surf = ax.plot_surface(X, Y, Z_train,
                                     linewidth=0, cmap=cm.coolwarm)
-                plt.xticks(ticks=plt.xticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.xticks()[0]])
-                plt.yticks(ticks=plt.yticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.yticks()[0]])
+                if x_logscale:
+                    plt.xticks(ticks=plt.xticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.xticks()[0]])
+                if y_logscale:
+                    plt.yticks(ticks=plt.yticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.yticks()[0]])
                 plt.xlabel(make_label(param_1))
                 plt.ylabel(make_label(param_2))
                 plt.title(f"Train Accuracy vs {make_label(param_1)} x {make_label(param_2)}")
@@ -333,13 +337,13 @@ def plot_results(csv_path, test_dir_path, metrics):
     plt.close()
 
 
-    # Test accuracy vs param
+    #  All algos Test Accuracy vs param
     fig = plt.figure(figsize=(12, 8))
     ax = plt.gca()
+    param = "n_estimators"
     for algorithm in algorithms:
         best_model = best_validation_accuracy_models.loc[algorithm]
         df_algorithm = df[df["algorithm"] == algorithm]
-        param = "n_estimators"
         if param not in best_model["model_params_dict"].keys():
             continue
         x_data = []
@@ -354,23 +358,25 @@ def plot_results(csv_path, test_dir_path, metrics):
         y_test_data = np.take_along_axis(np.array(y_test_data), sort_ind, axis=0)
         if x_data.shape[0] < 2:
             continue
-        # All algos Test Accuracy vs param
-        ax.plot(x_data, 1-y_test_data, marker="o", label=algorithm)
+        logscale = (x_data.max() / x_data.min()) > 100
+        ax.plot(x_data, 1-y_test_data, label=algorithm, linewidth=0.75)
+        ax.scatter(x_data[np.argmin(1-y_test_data)], (1-y_test_data).min(), marker="o")
 
-    plt.title(f"Error Rate vs {param}")
+    plt.title(f"Error Rate vs {make_label(param)}")
 
     ax.set_axisbelow(True)
-    ax.grid(True, which='major', linestyle='--', linewidth=0.5, zorder=0)
+    ax.grid(visible=True, which='major', linewidth=0.5, linestyle="--")
 
-    if x_data.max() / x_data.min() > 100:
+    if logscale:
         ax.set_xscale('log')
     ax.set_xlabel(make_label(param))
-    ax.set_ylabel("Accuracy")
-
-    ax.legend()
+    ax.set_ylabel("Error Rate")
+    leg = ax.legend()
+    for line in leg.get_lines():
+        line.set_linewidth(4.0)
 
     plt.tight_layout()
-    out_png = os.path.join(plot_subdir, f"all_algorithms-error_rate-vs-{param}.png")
+    out_png = os.path.join(plot_subdir, f"all_algorithms-error_rate-vs-{make_label(param)}.png")
     plt.savefig(out_png, dpi=150)
     plt.close()
 
