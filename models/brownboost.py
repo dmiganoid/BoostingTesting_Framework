@@ -61,7 +61,8 @@ class BrownBoostClassifier:
             #             print(f'iter is {k}\ts = {s}')
             k += 1
             w = np.exp(-(r + s)**2 / self.c)
-
+            if w.sum()==0:
+                return self
             h = copy.deepcopy(self.estimator)
             h.fit(X, y, sample_weight=w)
             pred = h.predict(X)

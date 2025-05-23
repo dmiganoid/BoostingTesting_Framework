@@ -14,11 +14,14 @@ class DataSetGenerator:
 
 
         self.fig, self.ax = plt.subplots(figsize=(16, 9))
+        
+        self.fig.canvas.manager.set_window_title('Dataset Generator')
+
         self.fig.subplots_adjust(left=0.25, bottom=0.25)
         self.N_samples_ax = self.fig.add_axes([0.25, 0.1, 0.6, 0.03])
         self.N_samples_slider = Slider(
             ax=self.N_samples_ax,
-            label='N samples for control point',
+            label='Samples per Control Point',
             valmin=5,
             valmax=1000,
             valinit=init_N,
@@ -56,7 +59,7 @@ class DataSetGenerator:
         self.closed_button_ax = self.fig.add_axes([0.28, 0.04, 0.22, 0.05])
         self.closed_button = CheckButtons(
             ax=self.closed_button_ax,
-            labels=['Closed Spline'],
+            labels=['Closed_Spline'],
             actives=[False]
         )
 

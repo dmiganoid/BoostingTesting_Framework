@@ -1,5 +1,5 @@
 {
-    "algorithms": ["CatBoost", "XGBoost", "LightGBM", "NGBoost", "SMOTEBoost", "RUSBoost", "GradientBoost", "AdaBoost", "MadaBoost", "BrownBoost", "FilterBoost", "RealAdaBoost", "LogitBoost", "ModestAdaBoost", "XWaterBoost", "SOWAdaBoost"],
+    "algorithms": ["CatBoost", "XGBoost", "LightGBM", "NGBoost", "SMOTEBoost", "RUSBoost", "GradientBoost", "AdaBoost", "SOWAdaBoost"],
   
     "estimator": {
       "estimator_type": "stump",
@@ -11,17 +11,7 @@
       "random_state": 42,
       "N_synthetic_tests": 3,
       "multiprocessing" : true,
-      "use_predefined_datasets": true,
-      "predefined_datasets" : [
-        "keel_new-thyroid1_prepared.csv",
-        "keel_page-blocks0_prepared.csv",
-        "keel_segment0_prepared.csv",
-        "keel_vehicle3_prepared.csv", 
-        "keel_yeast3_prepared.csv",
-        "oil-spill.csv",
-        "raisin_prepared.csv", 
-        "wisconsin_breast_cancer_prepared.csv"
-      ]
+      "use_predefined_datasets": true
       },
   
     "model": {

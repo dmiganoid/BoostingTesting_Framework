@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 from sklearn.tree import DecisionTreeRegressor
-
+from scipy.special import expit
 class NGBoostClassifier:
     def __init__(
         self,
@@ -34,7 +34,7 @@ class NGBoostClassifier:
 
     @staticmethod
     def _nll(y, f):
-        p = NGBoostClassifier._sigmoid(f)
+        p = expit(f)
         eps = 1e-12
         return -(y * np.log(p + eps) + (1 - y) * np.log(1 - p + eps)).mean()
 
@@ -46,7 +46,7 @@ class NGBoostClassifier:
         return X[idx], y[idx], f[idx]
 
     def _grad(self, y, f):
-        p = self._sigmoid(f)
+        p = expit(f)
         g = p - y
         if self.natural_gradient:
             fisher = p * (1 - p)
@@ -105,7 +105,7 @@ class NGBoostClassifier:
 
     def predict_proba(self, X):
         raw = self._raw_decision(X)
-        prob = self._sigmoid(raw)
+        prob = expit(raw)
         return np.column_stack([1 - prob, prob])
 
     def predict(self, X):

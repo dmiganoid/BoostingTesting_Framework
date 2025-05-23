@@ -60,6 +60,7 @@ def run_benchmark(cfg_file):
 
             trainer.fit_and_evaluate(
                 X, y,
+                validation_size=configuration['test']['validation_size'],
                 test_size=configuration['test']['test_size'],
                 random_state=configuration['test']['random_state'],
                 results_path=results_path,
@@ -76,6 +77,7 @@ def run_benchmark(cfg_file):
         test_name = f"random-{i}"
         trainer.fit_and_evaluate(
             X, y,
+            validation_size=configuration['test']['validation_size'],
             test_size=configuration['test']['test_size'],
             random_state=configuration['test']['random_state'],
             results_path=results_path,
@@ -106,8 +108,8 @@ def main_cli():
     parser = argparse.ArgumentParser(description="BoostingTesting_Framework CLI")
     parser.add_argument("--mode", choices=["generate", "train", "plot", "trainplot"], required=True)
     parser.add_argument("--cfg")
-    parser.add_argument("--plot_dirs", nargs='*', default=None, help="Список подпапок в results для построения графиков")
-    parser.add_argument("--mppl", default="True")
+    parser.add_argument("--dirs", nargs='*', default=None, help="Список подпапок в results для построения графиков")
+    parser.add_argument("--mp", default="True")
 
     args = parser.parse_args()
 
@@ -122,14 +124,14 @@ def main_cli():
 
     elif args.mode == "plot":
         from utils.plotting import plot_mode
-        plot_mode(only_dirs=args.plot_dirs, multiprocessing=args.mppl)
+        plot_mode(only_dirs=args.dirs, multiprocessing=int(args.mp) if args.mp.isdigit() else False)
 
     elif args.mode == "trainplot":
         cfg_file = args.cfg if args.cfg is not None else 'cfg.json'
         from main import run_benchmark
         results_folder = run_benchmark(cfg_file)
         from utils.plotting import plot_mode
-        plot_mode(only_dirs=[results_folder], multiprocessing=int(args.mppl) if args.mppl.isdigit() else bool(args.mppl))
+        plot_mode(only_dirs=[results_folder], multiprocessing=int(args.mp) if args.mp.isdigit() else False)
     else:
         parser.print_help()
 

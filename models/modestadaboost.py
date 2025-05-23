@@ -58,6 +58,8 @@ class ModestAdaBoostClassifier:
 
             pred = pred_probs_pos_t * (1-pred_probs_pos_inv_t) - pred_probs_neg_t * (1-pred_probs_neg_inv_t)
             D_t *= np.exp(-pred * self.learning_rate * np.where(y>0, 1, -1))
+            if D_t.sum()==0:
+                return self
             D_t /= D_t.sum()
 
         return self
