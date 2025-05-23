@@ -1,92 +1,88 @@
 from copy import deepcopy
 import numpy as np
 from sklearn.utils import check_random_state
+from collections import Counter
 
 
 class RUSBoostClassifier:
-    def __init__(
-        self,
-        estimator=None,
-        *,
-        n_estimators=50,
-        learning_rate=1.0,
-        sampling_strategy="auto",
-        random_state=None,
-    ):
+    def __init__(self, estimator=None, *,
+                 n_estimators=50, learning_rate=1.0,
+                 sampling_strategy="auto", random_state=None):
         self.estimator = estimator
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
         self.sampling_strategy = sampling_strategy
         self.random_state = random_state
-
         self.estimators_ = []
         self.alphas_ = []
         self.classes_ = None
 
-
     def fit(self, X, y, sample_weight=None):
         rng = check_random_state(self.random_state)
-
-        X = np.asarray(X)
-        y = np.asarray(y)
+        X = np.asarray(X); y = np.asarray(y)
         self.classes_ = np.unique(y)
         if len(self.classes_) != 2:
-            raise ValueError("RUSBoostClassifier supports only binary classes")
+            raise ValueError("Только бинарная классификация поддерживается")
 
+
+        counts = Counter(y)
+        min_label, maj_label = sorted(counts, key=lambda lbl: counts[lbl])
         y_pm = np.where(y == self.classes_[1], 1, -1)
+
+
+        if min_label != self.classes_[1]:
+            y_pm = -y_pm  
 
         n_samples = X.shape[0]
         if sample_weight is None:
-            D = np.full(n_samples, 1 / n_samples, dtype=float)
+            D = np.full(n_samples, 1/n_samples, dtype=float)
         else:
             D = sample_weight / np.sum(sample_weight)
 
-        self.estimators_ = []
-        self.alphas_ = []
+        self.estimators_, self.alphas_ = [], []
 
         for m in range(self.n_estimators):
-            min_mask = y_pm == 1
+            min_mask = (y == min_label)
             maj_mask = ~min_mask
-
             idx_min = np.where(min_mask)[0]
             idx_maj = np.where(maj_mask)[0]
-
-            n_min = idx_min.shape[0]
-            if n_min == 0 or idx_maj.shape[0] == 0:
+            n_min, n_maj = len(idx_min), len(idx_maj)
+            if n_min == 0 or n_maj == 0:
                 break
 
-            if idx_maj.shape[0] <= n_min:
-                sel_maj = idx_maj
+            if self.sampling_strategy == "auto":
+                k = n_min
             else:
-                p_maj = D[idx_maj] / D[idx_maj].sum()
-                sel_maj = rng.choice(idx_maj, size=n_min, replace=False, p=p_maj)
+                k = int(self.sampling_strategy * n_min)
 
+            p = D[idx_maj] / D[idx_maj].sum()
+            sel_maj = rng.choice(idx_maj, size=min(k, n_maj), replace=False, p=p)
             sel_idx = np.concatenate([idx_min, sel_maj])
             X_bal, y_bal = X[sel_idx], y[sel_idx]
-
             D_bal = D[sel_idx]
             D_bal /= D_bal.sum()
 
             h = deepcopy(self.estimator)
             h.fit(X_bal, y_bal, sample_weight=D_bal)
 
-            pred_pm = np.where(h.predict(X) == self.classes_[1], 1, -1)
+            pred = h.predict(X)
+            pred_pm = np.where(pred == min_label, 1, -1)
+            if min_label != self.classes_[1]:
+                pred_pm = -pred_pm
             err = np.sum(D * (pred_pm != y_pm))
 
-            if err >= 0.5 - 1e-10:
-                break
-            if err == 0:
-                alpha = 1.0
-            else:
-                alpha = self.learning_rate * 0.5 * np.log((1 - err) / err)
+            if err >= 0.5:
+                continue
+            alpha = (0.5 * self.learning_rate *
+                     np.log((1 - err) / err)) if err > 0 else 1.0
 
             self.estimators_.append(h)
             self.alphas_.append(alpha)
-
             D *= np.exp(-alpha * y_pm * pred_pm)
             D /= D.sum()
 
         return self
+
 
     def _aggregate(self, X):
         agg = np.zeros(X.shape[0])
