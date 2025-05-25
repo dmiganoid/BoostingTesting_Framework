@@ -43,6 +43,8 @@ class RUSBoostClassifier:
             D = np.full(n_samples, 1.0 / n_samples, dtype=float)
         else:
             D = sample_weight.astype(float)
+            if D.sum() == 0:
+                return self
             D /= D.sum()
 
         self.estimators_.clear()
@@ -85,6 +87,8 @@ class RUSBoostClassifier:
             self.alphas_.append(alpha)
 
             D *= np.exp(-alpha * y_pm * pred_pm)
+            if D.sum() == 0:
+                return self
             D /= D.sum()
 
         return self

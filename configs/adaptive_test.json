@@ -3,7 +3,7 @@
 
   "estimator": {
     "estimator_type": "stump",
-    "estimator_params": { "max_depth": [1,2,3] }
+    "estimator_params": { "max_depth": [1] }
   },
 
   "test": {
@@ -22,7 +22,7 @@
     },
     "BrownBoost": {
       "c": [ 0.2, 0.25, 0.35, 0.5, 0.75, 1, 2, 3, 4 ],
-      "convergence_criterion": [0.001] 
+      "convergence_criterion": [0.001, 0.01, 0.1, 1] 
     },
     "MadaBoost": {},
 

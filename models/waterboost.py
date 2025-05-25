@@ -30,8 +30,8 @@ class MWaterBoostClassifier:
             h_t.fit(X, y, sample_weight=D_t)
             pred = h_t.predict(X)
 
-            err_t = np.sum(D_t * (pred != y)) + 1e-10
-            alpha_t = self.learning_rate * 0.5 * np.log((1-err_t)/err_t)
+            err_t = np.sum(D_t * (pred != y))
+            alpha_t = self.learning_rate * 0.5 * np.log((1-err_t +1e-10)/(err_t+1e-10))
 
             self.estimator_weights.append(alpha_t)
             self.estimators.append(h_t)
@@ -39,13 +39,12 @@ class MWaterBoostClassifier:
             
             
             B_t *= np.where(pred==y, np.exp(-alpha_t), np.exp(alpha_t))
-            W = D_t.sum()
             D_t = np.where( B_t <= 1,
                            D_t * B_t, # D_0 * B_t
                            1/n_samples)
-            if (W-(D_t).sum()) > 0:
-                decreased_weight = W-(D_t).sum() #prev - now
-                increased_weight_d = np.where(B_t > 1, B_t-1, 0)
+            if (1-(D_t).sum()) > 0:
+                decreased_weight = 1-(D_t).sum() #prev - now
+                increased_weight_d = np.where(B_t > 1, B_t, 0)
                 if increased_weight_d.sum() > 0:
                     D_t += decreased_weight * increased_weight_d / increased_weight_d.sum()
             if D_t.sum()==0:
@@ -111,15 +110,17 @@ class XWaterBoostClassifier:
             
             
             B_t *= np.where(pred==y, np.exp(-alpha_t), np.exp(alpha_t))
-            W = D_t.sum()
             D_t = np.where( B_t <= 1,
                            D_t * B_t, # D_0 * B_t
                            1/n_samples)
-            if (W-(D_t).sum()) > 0:
-                decreased_weight = W-(D_t).sum() #prev - now
+            if (1-(D_t).sum()):
+                decreased_weight = 1-(D_t).sum() #prev - now
                 increased_weight_d = np.where(B_t > 1, B_t, 0)
                 if increased_weight_d.sum() > 0:
                     D_t += decreased_weight * increased_weight_d / increased_weight_d.sum()
+            if D_t.sum()==0:
+                self.n_estimators = t
+                return self
             D_t /= D_t.sum() #if no weights to increase or sum of D_t > W  
 
         return self
