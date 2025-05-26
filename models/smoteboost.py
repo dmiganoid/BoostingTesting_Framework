@@ -17,7 +17,6 @@ class SMOTEBoostClassifier:
         self.alphas_ = []
         self.estimators_ = []
 
-
     def _check_inputs(self, X, y):
         X = np.asarray(X)
         y = np.asarray(y)
@@ -29,9 +28,13 @@ class SMOTEBoostClassifier:
     def _update_distribution(self, D, y_true, y_pred, alpha):
         miss = (y_pred != y_true)
         D *= np.exp(self.learning_rate * alpha * miss)
-        D /= D.sum()
-        return D
 
+        if D.sum() == 0:
+            return self
+
+        D /= D.sum()
+        
+        return D
 
     def fit(self, X, y):
         X, y_int = self._check_inputs(X, y)
@@ -40,31 +43,39 @@ class SMOTEBoostClassifier:
         n_samples = X.shape[0]
         D = np.ones(n_samples, dtype=float) / n_samples
 
-        smote = SMOTE(sampling_strategy=self.sampling_strategy,
-                       k_neighbors=self.k_neighbors,
-                       random_state=self.random_state)
-
         self.alphas_ = []
         self.estimators_ = []
 
         minority_mask = (y_int == 1)
 
         for _ in range(self.n_estimators):
-            X_syn, y_syn = smote.fit_resample(X, y_int)
-            n_orig = X.shape[0]
+            idx = rng.choice(n_samples, size=n_samples, replace=True, p=D)
+            X_res, y_res = X[idx], y_int[idx]
+
+            seed = rng.integers(0, 2**32)
+            smote = SMOTE(
+                sampling_strategy=self.sampling_strategy,
+                k_neighbors=self.k_neighbors,
+                random_state=int(seed)
+            )
+
+            X_syn, y_syn = smote.fit_resample(X_res, y_res)
+
+            n_orig = X_res.shape[0]
             n_syn = X_syn.shape[0] - n_orig
 
-            sample_weight_res = np.zeros(X_syn.shape[0])
-            sample_weight_res[:n_orig] = D
-            if n_syn:
+            sample_weight = np.zeros(X_syn.shape[0], dtype=float)
+            sample_weight[:n_orig] = D[idx]
+
+            if n_syn > 0:
                 avg_minority_w = D[minority_mask].mean()
-                sample_weight_res[n_orig:] = avg_minority_w
+                sample_weight[n_orig:] = avg_minority_w
 
-            h_t = deepcopy(self.estimator)
-            h_t.fit(X_syn, y_syn, sample_weight=sample_weight_res)
+            h = deepcopy(self.estimator)
+            h.fit(X_syn, y_syn, sample_weight=sample_weight)
 
-            y_pred = h_t.predict(X)
-            err = np.dot(D, y_pred != y_int)
+            y_pred = h.predict(X)
+            err = np.dot(D, (y_pred != y_int))
             err = np.clip(err, 1e-10, 1 - 1e-10)
 
             alpha = 0.5 * np.log((1 - err) / err)
@@ -72,12 +83,12 @@ class SMOTEBoostClassifier:
             D = self._update_distribution(D, y_int, y_pred, alpha)
 
             self.alphas_.append(alpha)
-            self.estimators_.append(h_t)
+            self.estimators_.append(h)
 
         return self
 
     def _aggregate(self, X):
-        agg = np.zeros(X.shape[0])
+        agg = np.zeros(X.shape[0], dtype=float)
         for alpha, h in zip(self.alphas_, self.estimators_):
             pred = h.predict(X)
             pred_signed = np.where(pred == 1, 1, -1)
@@ -102,7 +113,7 @@ class SMOTEBoostClassifier:
             "random_state": self.random_state,
         }
 
-    def set_params(self, **p):
-        for k, v in p.items():
-            setattr(self, k, v)
+    def set_params(self, **params):
+        for key, value in params.items():
+            setattr(self, key, value)
         return self
