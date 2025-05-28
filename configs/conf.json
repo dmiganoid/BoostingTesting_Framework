@@ -1,5 +1,5 @@
 {
-  "algorithms": ["GradientBoost", "AdaBoost", "MadaBoost", "BrownBoost", "FilterBoost", "RealAdaBoost", "LogitBoost", "ModestAdaBoost", "XWaterBoost"],
+  "algorithms": ["AdaBoost", "MadaBoost", "BrownBoost", "FilterBoost", "RealAdaBoost", "LogitBoost", "ModestAdaBoost", "WaterBoost"],
 
   "estimator": {
     "estimator_type": "stump",
@@ -7,12 +7,20 @@
   },
 
   "test": {
-    "test_size": 0.3,
-    "validation_size":0.2,
-    "random_state": 42,
-    "N_synthetic_tests": 0,
+    "test_size": 0.15,
+    "validation_size":0.15,
+    "artificial_noise" : 0,
+    "random_state": 1232131242,
+    "N_synthetic_tests": 1,
     "multiprocessing" : true,
-    "use_predefined_datasets": true
+    "use_predefined_datasets": true,
+    "predefined_datasets" : [
+      "dataset-generated-2.csv",
+      "keel_ecoli3_prepared.csv",
+      "keel_page-blocks0_prepared.csv",
+      "keel_yeast3_prepared.csv",
+      "wisconsin_breast_cancer_prepared.csv"
+    ]
     },
 
   "model": {

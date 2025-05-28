@@ -151,8 +151,8 @@ class NaiveFilterBoostClassifier:
         return self
 
 
-class WIP_FilterBoostClassifier:
-    def __init__(self, estimator=None, max_estimators=100, epsilon=0.1, delta=0.9, tau=0.1, learning_rate=1, m_t=None, random_state=None):
+class FilterBoostClassifier:
+    def __init__(self, estimator=None, n_estimators=100, epsilon=0.1, delta=0.9, tau=0.1, learning_rate=1, m_t=None, random_state=None):
         """
         Initialize FilterBoost.
         estimator: Number of iterations
@@ -161,7 +161,7 @@ class WIP_FilterBoostClassifier:
         tau (0,1): Relative edge error
         """
         self.estimator = estimator
-        self.max_estimators = max_estimators
+        self.n_estimators = n_estimators
         self.epsilon = epsilon
         self.delta = delta
         self.estimators = []  # List of (alpha, weak_learner) pairs
@@ -192,20 +192,22 @@ class WIP_FilterBoostClassifier:
         self.estimators = []
         self.classes = np.sort(np.unique(y))
         self.oracle = Oracle(X, y, random_state=self.random_state)
-        y_pred = np.zeros(y.shape)
-        for t in range(1, self.max_estimators+1):
+        yF_t = np.zeros(y.shape)
+        for t in range(1, self.n_estimators+1):
             self.delta_t = self.delta/(3*t*(t+1))
             self.r = 0
             ind = np.array([], dtype=np.int64)
+            if (yF_t > 0).all():
+                yF_t /= yF_t.sum()
             if len(self.estimators) > 0:
-                if self.stop_criterion():
-                    return self
+                #if self.stop_criterion():
+                #    return self
                 while ind.shape[0] < X.shape[0]:
                     self.r += X.shape[0]
-                    temp = np.where(self.rng.random(size=X.shape[0]) <= 1 / (1 + np.exp(
-                        np.where(np.where(y_pred>0, self.classes[1], self.classes[0])==y, y_pred, -y_pred)))
-                        )
-                    ind = np.hstack([ind, temp[0]])
+                    ind = np.hstack([ind, 
+                        np.where(self.rng.random(size=X.shape[0]) <= 1 / 
+                                 (1 + np.exp(yF_t))
+                                )[0]])[:X.shape[0]]
             else:
                 self.r += X.shape[0]
                 ind = np.arange(X.shape[0])
@@ -221,30 +223,22 @@ class WIP_FilterBoostClassifier:
             ind = np.array([], dtype=np.int64)
             if len(self.estimators) > 0:
                 while ind.shape[0] < X.shape[0]:
-                    temp = np.where(self.rng.random(size=X.shape[0]) <= 1 / (1 + np.exp(
-                        np.where(np.where(y_pred>0, self.classes[1], self.classes[0])==y, y_pred, -y_pred)))
+                    temp = np.where(self.rng.random(size=X.shape[0]) <= 1 / (1 + np.exp(yF_t))
                         )
-                    ind = np.hstack([ind, temp[0]])
+                    ind = np.hstack([ind, temp[0]])[:X.shape[0]]
             else:
                 ind = np.arange(X.shape[0])
 
             errs = h_t.predict(X[ind]) == y[ind]
-            for err in errs:
-                self.r += 1
-                #delta_t_cor = self.delta_t / (self.r * (self.r + 1)) -> filter fails i=int(np.ceil(2/self.epsilon*np.log(1 / delta_t_cor))) times means end of fitting
-                if abs(u) < alpha * (1 + 1 / self.tau):
-                    n += 1
-                    m += err  # I(h_t(x) = y)
-                    u = m / n - 0.5
-                    alpha_t = np.sqrt(0.5/n * np.log((n * (n + 1)) / self.delta_t))
-                else:
-                    break
-            gamma_t = u / (1 + self.tau)
+            u = errs.sum()/ind.shape[0] - 1/2
+            gamma_t = u # / (1 + self.tau)
 
             # Compute alpha
-            alpha_t = 0.5 * np.log((1/2 + gamma_t) / (1/2 - gamma_t)) * self.learning_rate
-            y_pred += alpha_t * h_t.predict(X)
+            alpha_t = 0.5 * np.log((1/2 + gamma_t+1e-5) / (1/2 - gamma_t+1e-5)) * self.learning_rate
+            y_pred = np.where(h_t.predict(X)==y, alpha_t, -alpha_t)
+            
             # Update F
+            yF_t += y_pred
             self.estimators.append(h_t)
             self.alphas.append(alpha_t*self.learning_rate)
         
@@ -286,7 +280,7 @@ class WIP_FilterBoostClassifier:
         return self
     
     
-class FilterBoostClassifier:
+class WIP_FilterBoostClassifier:
     def __init__(self, estimator=None, n_estimators=100, epsilon=0.1, delta=0.9, tau=0.1, learning_rate=1, m_t=None, random_state=None):
         """
         Initialize FilterBoost.
@@ -315,7 +309,7 @@ class FilterBoostClassifier:
         """Main FilterBoost algorithm."""
         self.alphas = []
         self.estimators = []
-        yF_t = np.zeros(y.shape)
+        yF_t = np.zeros(X.shape[0])
         for t in range(1, self.n_estimators+1):
             D_t = expit(-yF_t)
             D_t /= D_t.sum()
@@ -335,7 +329,6 @@ class FilterBoostClassifier:
 
             # Compute alpha
             alpha_t = 0.5 *self.learning_rate * np.log(err / (1-err+1e+10))
-            yF_t += np.where(pred==y, alpha_t, -alpha_t)
             # Update F
             self.estimators.append(h_t)
             self.alphas.append(alpha_t)

@@ -139,37 +139,16 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
 
+        case "WaterBoost":
+            from models.waterboost import WaterBoostClassifier
+            algorithm_class = WaterBoostClassifier
+            param_grid["estimator"] = base_estimators
+            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
+            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
+
         case "XWaterBoost":
             from models.waterboost import XWaterBoostClassifier
             algorithm_class = XWaterBoostClassifier
-            param_grid["estimator"] = base_estimators
-            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
-            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-
-        case "XMWaterBoost":
-            from models.waterboost import XMWaterBoostClassifier
-            algorithm_class = XMWaterBoostClassifier
-            param_grid["estimator"] = base_estimators
-            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
-            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-
-        case "MWaterBoost":
-            from models.waterboost import MWaterBoostClassifier
-            algorithm_class = MWaterBoostClassifier
-            param_grid["estimator"] = base_estimators
-            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
-            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-
-        case "AWaterBoost":
-            from models.waterboost import AWaterBoostClassifier
-            algorithm_class = AWaterBoostClassifier
-            param_grid["estimator"] = base_estimators
-            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
-            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-
-        case "XMadaBoost":
-            from models.waterboost import XMadaBoostClassifier
-            algorithm_class = XMadaBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
@@ -246,12 +225,14 @@ class BoostingBenchmarkTrainer:
     def __init__(self, algorithms_data):
         self.algorithms_data = algorithms_data
 
-    def fit_and_evaluate(self, X, y, random_state=None, test_size=0.15, validation_size=0.15, results_path="results", test_name="test", multiprocessing=True):
+    def fit_and_evaluate(self, X, y, random_state=None, test_size=0.15, validation_size=0.15, results_path="results", test_name="test", multiprocessing=True, noise=0):
         results = []
+        rng = np.random.default_rng(seed=random_state)
         X_train_validation, X_test, y_train_validation, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size, stratify=y)   
         X_train, X_validation, y_train, y_validation = train_test_split(X_train_validation, y_train_validation, random_state=random_state, test_size=validation_size/(1-test_size), stratify=y_train_validation)
+        y_train = np.where(rng.random(X_train.shape[0]) < noise, 1-y_train,  y_train)
+        y_validation = np.where(rng.random(X_validation.shape[0]) < noise, 1-y_validation, y_validation)
         print(f"== Starting {test_name} ==")
-        
         os.mkdir(os.path.join(results_path,test_name))
         np.savetxt(os.path.join(results_path,test_name,'train-dataset.csv'), np.hstack((X_train, y_train.reshape(X_train.shape[0], 1))), delimiter=",")
         np.savetxt(os.path.join(results_path,test_name,'test-dataset.csv'), np.hstack((X_test, y_test.reshape(X_test.shape[0], 1))), delimiter=",")

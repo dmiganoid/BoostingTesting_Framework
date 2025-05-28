@@ -8,30 +8,11 @@
 
   "test": {
     "test_size": 0.15,
+    "validation_size" : 0.15,
     "random_state": 42,
     "N_synthetic_tests": 0,
     "multiprocessing" : false,
-    "use_predefined_datasets": true,
-    "predefined_datasets" : [
-        "dataset-generated-0.csv", 
-        "dataset-generated-2.csv",
-        "dataset-generated-3.csv",
-        "dataset-generated-4.csv",
-        "dataset-generated-5.csv",
-        "dataset-generated-6.csv",
-        "dataset-generated-7.csv",
-        "dataset-generated-8.csv",
-        "dataset-generated-9.csv", 
-        "dataset-generated-10.csv",
-        "keel_new-thyroid1_prepared.csv",
-        "keel_page-blocks0_prepared.csv",
-        "keel_segment0_prepared.csv",
-        "keel_vehicle3_prepared.csv", 
-        "keel_yeast3_prepared.csv",
-        "oil-spill.csv",
-        "raisin_prepared.csv", 
-        "wisconsin_breast_cancer_prepared.csv"
-      ]
+    "use_predefined_datasets": true
   },
 
   "model": {

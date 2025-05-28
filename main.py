@@ -62,6 +62,7 @@ def run_benchmark(cfg_file):
                 X, y,
                 validation_size=configuration['test']['validation_size'],
                 test_size=configuration['test']['test_size'],
+                noise = configuration['test']['artificial_noise'],
                 random_state=configuration['test']['random_state'],
                 results_path=results_path,
                 test_name=test_name,
@@ -78,6 +79,8 @@ def run_benchmark(cfg_file):
         trainer.fit_and_evaluate(
             X, y,
             validation_size=configuration['test']['validation_size'],
+            noise = configuration['test']['artificial_noise'],
+
             test_size=configuration['test']['test_size'],
             random_state=configuration['test']['random_state'],
             results_path=results_path,

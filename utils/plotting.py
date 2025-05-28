@@ -93,6 +93,7 @@ def plot_mode(only_dirs=None, multiprocessing=True):
 
 def plot_results(csv_path, test_dir_path, metrics):
     train_file = os.path.join(test_dir_path, "train-dataset.csv")
+    valid_file = os.path.join(test_dir_path, "validation-dataset.csv")
     test_file = os.path.join(test_dir_path, "test-dataset.csv")
     df = pd.read_csv(csv_path, sep=",")
     if df.empty or "algorithm" not in df.columns:
@@ -145,7 +146,7 @@ def plot_results(csv_path, test_dir_path, metrics):
             if x_data.shape[0] < 2:
                 continue
             # Train and Test Accuracy vs param
-            fig = plt.figure(figsize=(12, 8))
+            fig = plt.figure(figsize=(10, 5))
             ax = plt.gca()
             plt.title(f"Train and test accuracy vs {make_label(param)}")
 
@@ -172,7 +173,7 @@ def plot_results(csv_path, test_dir_path, metrics):
             plt.close()
 
             # Major and Minor Accuracy vs param
-            fig = plt.figure(figsize=(12, 8))
+            fig = plt.figure(figsize=(10, 5))
             ax = plt.gca()
             plt.title(f"Test accuracy on major and minor class vs {make_label(param)}")
 
@@ -235,7 +236,7 @@ def plot_results(csv_path, test_dir_path, metrics):
                     y_logscale=True
                 
                 X, Y = np.meshgrid(X, Y)
-                fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                fig, ax = plt.subplots(figsize=(10, 5), subplot_kw={"projection": "3d"})
                 surf = ax.plot_surface(X, Y, Z_test,
                                     linewidth=0, cmap=cm.coolwarm)
                 plt.xticks(ticks=plt.xticks()[0], labels= ["$2^{"+str(int(i))+"}$" for i in plt.xticks()[0]])
@@ -247,7 +248,7 @@ def plot_results(csv_path, test_dir_path, metrics):
                 plt.savefig(out_png, dpi=150)
                 plt.close()
 
-                fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                fig, ax = plt.subplots(figsize=(10, 5), subplot_kw={"projection": "3d"})
                 surf = ax.plot_surface(X, Y, Z_test,
                                     linewidth=0, cmap=cm.coolwarm)
                 if x_logscale:
@@ -262,7 +263,7 @@ def plot_results(csv_path, test_dir_path, metrics):
                 plt.savefig(out_png, dpi=150)
                 plt.close()
 
-                fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                fig, ax = plt.subplots(figsize=(10, 5), subplot_kw={"projection": "3d"})
                 surf = ax.plot_surface(X, Y, Z_train,
                                     linewidth=0, cmap=cm.coolwarm)
                 if x_logscale:
@@ -276,7 +277,7 @@ def plot_results(csv_path, test_dir_path, metrics):
                 plt.savefig(out_png, dpi=150)
                 plt.close()
 
-                fig, ax = plt.subplots(figsize=(12,8), subplot_kw={"projection": "3d"})
+                fig, ax = plt.subplots(figsize=(10, 5), subplot_kw={"projection": "3d"})
                 surf = ax.plot_surface(X, Y, Z_train,
                                     linewidth=0, cmap=cm.coolwarm)
                 ax.view_init(elev=0, azim=225)
@@ -288,7 +289,7 @@ def plot_results(csv_path, test_dir_path, metrics):
 
 
     ### compare top test accuracy models from each class
-    fig = plt.figure(figsize=(16, 10))
+    fig = plt.figure(figsize=(10, 5))
     axis = plt.gca()
     plt.title("Best Models By Validation Accuracy")
     axis.grid(True, which='both', linestyle='--', linewidth=0.5, zorder=0)
@@ -312,7 +313,7 @@ def plot_results(csv_path, test_dir_path, metrics):
     
 
     ### compare top train accuracy models from each class
-    fig = plt.figure(figsize=(16, 10))
+    fig = plt.figure(figsize=(10, 5))
     axis = plt.gca()
     plt.title(f"Best Models By Train Accuracy")
     axis.set_axisbelow(True)
@@ -338,7 +339,8 @@ def plot_results(csv_path, test_dir_path, metrics):
 
 
     #  All algos Test Accuracy vs param
-    fig = plt.figure(figsize=(12, 8))
+    logscale = False
+    fig = plt.figure(figsize=(10, 5))
     ax = plt.gca()
     param = "n_estimators"
     for algorithm in algorithms:
@@ -359,8 +361,9 @@ def plot_results(csv_path, test_dir_path, metrics):
         if x_data.shape[0] < 2:
             continue
         logscale = (x_data.max() / x_data.min()) > 100
-        ax.plot(x_data, 1-y_test_data, label=algorithm, linewidth=0.75)
-        ax.scatter(x_data[np.argmin(1-y_test_data)], (1-y_test_data).min(), marker="o")
+        ax.plot(x_data, 1-y_test_data, label=algorithm, linewidth=1.25)
+        sc = ax.scatter(best_model['model_params_dict'][param], 1-best_model['test_accuracy'], marker="x")
+        ax.scatter(x_data[np.argmin(1-y_test_data)], (1-y_test_data).min(), marker="o", c=sc.get_facecolor())
 
     plt.title(f"Error Rate vs {make_label(param)}")
 
@@ -406,12 +409,26 @@ def plot_results(csv_path, test_dir_path, metrics):
 
         train_data = np.genfromtxt(train_file, delimiter=",")
         test_data = np.genfromtxt(test_file, delimiter=",")
-
+        valid_data =  np.genfromtxt(valid_file, delimiter=",")
         y_train = train_data[:, -1]
+        y_valid = valid_data[:, -1]
         y_test = test_data[:, -1]
         X_train = train_data[:, :-1]
+        X_valid = valid_data[:, :-1]
         X_test = test_data[:, :-1]
 
+        X = np.vstack((X_train, X_valid, X_test))
+        y = np.hstack((y_train, y_valid, y_test))
+        fig = plt.figure(figsize=(9,3))
+        axes=plt.gca()
+
+        axes.scatter(x=X[:, 0], y=X[:,1], c=np.where(y==+1, 'r', 'b'), marker='.', s=12)
+        axes.grid(False)
+        axes.set_xticks([])
+        axes.set_yticks([])
+        plt.tight_layout()
+        plt.savefig(os.path.join(plot_subdir,f"dataset.png"),dpi=150)
+                
         if X_test.shape[1] == 2:
             for algo_,row_ in best_validation_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
                 postfix=row_["file_postfix"]
@@ -424,24 +441,27 @@ def plot_results(csv_path, test_dir_path, metrics):
                 y_train_pred=np.genfromtxt(pred_train_file,delimiter=",")
                 y_test_pred=np.genfromtxt(pred_test_file,delimiter=",")
 
-                fig, axes = plt.subplots(1, 2, figsize=(24,8))
+                fig, axes = plt.subplots(1, 2, figsize=(9,3))
                 fig.suptitle(f"{algo_} Train and Test Predictions")
-
+                
                 true_train_preds = np.where(y_train==y_train_pred)
                 true_test_preds = np.where(y_test==y_test_pred)
                 false_train_preds = np.where(y_train!=y_train_pred)
                 false_test_preds =  np.where(y_test!=y_test_pred)
 
-                axes[0].scatter(x=X_train[true_train_preds, 0], y=X_train[true_train_preds, 1], c=np.where(y_train_pred[true_train_preds], 'r', 'b'), marker='+', s=12, label="Correct")
-                axes[0].scatter(x=X_train[false_train_preds, 0], y=X_train[false_train_preds, 1], c=np.where(y_train_pred[false_train_preds], 'darkred',  'darkblue'), marker='x', label="Incorrect")
+                axes[0].scatter(x=X_train[true_train_preds, 0], y=X_train[true_train_preds, 1], c=np.where(y_train_pred[true_train_preds], 'r', 'b'), marker='+', s=12)
+                axes[0].scatter(x=X_train[false_train_preds, 0], y=X_train[false_train_preds, 1], c=np.where(y_train_pred[false_train_preds], 'darkred',  'darkblue'), marker='x')
                 axes[0].grid(False)
+                axes[0].set_xticks([])
+                axes[0].set_yticks([])
                 axes[0].set_title("Train")
 
-                axes[1].scatter(x=X_test[true_test_preds, 0], y=X_test[true_test_preds, 1], c=np.where(y_test_pred[true_test_preds], 'r', 'b'), marker='+', s=12, label="Correct")
-                axes[1].scatter(x=X_test[false_test_preds, 0], y=X_test[false_test_preds, 1], c=np.where(y_test_pred[false_test_preds],  'darkred', 'darkblue'), marker='x', label="Incorrect")
+                axes[1].scatter(x=X_test[true_test_preds, 0], y=X_test[true_test_preds, 1], c=np.where(y_test_pred[true_test_preds], 'r', 'b'), marker='+', s=12,)
+                axes[1].scatter(x=X_test[false_test_preds, 0], y=X_test[false_test_preds, 1], c=np.where(y_test_pred[false_test_preds],  'darkred', 'darkblue'), marker='x')
                 axes[1].grid(False)
+                axes[1].set_xticks([])
+                axes[1].set_yticks([])
                 axes[1].set_title("Test")
-                plt.legend()
                 plt.tight_layout()
                 plt.savefig(os.path.join(plot_subdir,f"{algo_}_train-test-preds.png"),dpi=150)
                 plt.close()
