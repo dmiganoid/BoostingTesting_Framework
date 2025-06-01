@@ -1,52 +1,48 @@
 {
-    "algorithms": ["CatBoost", "XGBoost", "LightGBM", "NGBoost", "SMOTEBoost", "RUSBoost", "GradientBoost", "AdaBoost", "SOWAdaBoost"],
-  
-    "estimator": {
-      "estimator_type": "stump",
-      "estimator_params": { "max_depth": [1] }
+  "algorithms": ["CatBoost", "XGBoost", "LightGBM", "NGBoost", "SMOTEBoost", "RUSBoost", "GradientBoost", "AdaBoost", "SOWAdaBoost"],
+
+  "estimator": {
+    "estimator_type": "stump",
+    "estimator_params": { "max_depth": [1] }
+  },
+
+  "test": {
+  "test_size": 0.15,
+  "validation_size":0.15,
+  "artificial_noise" : 0,
+  "retrain" : 6,
+  "random_state": 42,
+  "N_synthetic_tests": 1,
+  "multiprocessing" : 8,
+  "use_predefined_datasets": true,
+  "skip_datasets" : [
+    "creditcard.csv",
+    "abalone_prepared.csv",
+    "smart_grid_stability_augmented.csv"
+  ]
+  },
+
+  "model": {
+    "common": {
+    "n_estimators": [ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048],
+    "learning_rate":  [ 0.001, 0.032, 0.128, 0.256, 0.512, 1]
     },
-  
-    "test": {
-    "test_size": 0.3,
-    "validation_size":0.2,
-    "random_state": 42,
-    "N_synthetic_tests": 0,
-    "multiprocessing" : true,
-    "use_predefined_datasets": true
+    "CatBoost": {
+      "depth": [1]
     },
-  
-    "model": {
-      "common": {
-      "n_estimators": [ 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 96, 128, 160, 192, 224, 256, 384, 512, 768, 1024, 1280],
-        "learning_rate":  [ 0.001, 0.008, 0.032, 0.128, 0.256, 0.512, 1]
-      },
-      "BrownBoost": {
-        "c": [ 0.05, 0.1, 0.25, 0.5, 0.75, 1, 2, 3, 4 ],
-        "convergence_criterion": [0.001, 0.01, 0.1, 1] 
-      },
-      "MadaBoost": {},
-  
-      "CatBoost": {
-        "depth": [1]
-      },
-      "XGBoost": {
-        "max_depth": [1]
-      },
-      "LightGBM": {
-        "max_depth": [1]
-      },
-      "FilterBoost": {
-        "epsilon" : [0.05],
-        "delta" : [0.9],
-        "tau" : [0.1]
-      },
-      "GradientBoost": {
-        "gpu": false,
-        "loss": ["log_loss"]
-      },
-      "SOWAdaBoost": {
-        "gpu": false
-      }
+    "XGBoost": {
+      "max_depth": [1]
+    },
+    "LightGBM": {
+      "max_depth": [1]
+    },
+    "GradientBoost": {
+      "gpu": false,
+      "loss": ["log_loss"]
+    },
+    "SOWAdaBoost": {
+      "gpu": false
     }
   }
+}
   

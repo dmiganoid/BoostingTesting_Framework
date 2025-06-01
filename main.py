@@ -39,8 +39,17 @@ def run_benchmark(cfg_file):
         )
     trainer = BoostingBenchmarkTrainer(algorithms_data=algorithms_data)
 
+    noise = configuration['test'].get('artificial_noise', 0)
+    N_synthetic_tests = configuration['test'].get('N_synthetic_tests', 3)
+    synthetic_test_n_samples = configuration['test'].get('synthetic_test_n_samples', 1000)
     use_predefined = configuration['test'].get('use_predefined_datasets', False)
-
+    noise = configuration['test'].get('artificial_noise', 0)
+    test_size = configuration['test'].get('test_size', 0.15)
+    validation_size = configuration['test'].get('validation_size', 0.15)
+    random_state = configuration['test'].get('random_state', 42)
+    multiprocessing = configuration['test'].get('multiprocessing', True)
+    N_retrain=configuration['test'].get('retrain', 1)
+    skip_datasets = configuration['test'].get('skip_datasets', [])
     if use_predefined:
         predefined_datasets = configuration['test'].get('predefined_datasets', [])
 
@@ -49,6 +58,8 @@ def run_benchmark(cfg_file):
                 predefined_datasets.append(dataset)
 
         for dataset_name in predefined_datasets:
+            if dataset_name in skip_datasets:
+                continue
             csv_full_path = os.path.join(os.path.dirname(__file__), "datasets", dataset_name)
             if not os.path.exists(csv_full_path):
                 print(f"Not found: {csv_full_path}")
@@ -60,17 +71,17 @@ def run_benchmark(cfg_file):
 
             trainer.fit_and_evaluate(
                 X, y,
-                validation_size=configuration['test']['validation_size'],
-                test_size=configuration['test']['test_size'],
-                noise = configuration['test']['artificial_noise'],
-                random_state=configuration['test']['random_state'],
+                validation_size=validation_size,
+                test_size=test_size,
+                N_retrain = N_retrain,
+                noise = noise,
+                random_state=random_state,
                 results_path=results_path,
                 test_name=test_name,
-                multiprocessing= configuration['test'].get('multiprocessing', True)
+                multiprocessing= multiprocessing
             )
 
-    N_synthetic_tests = configuration['test'].get('N_synthetic_tests', 3)
-    synthetic_test_n_samples = configuration['test'].get('synthetic_test_n_samples', 1000)
+
     for i in range(N_synthetic_tests):
         X, y = make_classification(
             n_samples=synthetic_test_n_samples, class_sep=0.8
@@ -78,14 +89,14 @@ def run_benchmark(cfg_file):
         test_name = f"random-{i}"
         trainer.fit_and_evaluate(
             X, y,
-            validation_size=configuration['test']['validation_size'],
-            noise = configuration['test']['artificial_noise'],
-
-            test_size=configuration['test']['test_size'],
-            random_state=configuration['test']['random_state'],
+            validation_size=validation_size,
+            test_size=test_size,
+            N_retrain = N_retrain,
+            noise = noise,
+            random_state=random_state,
             results_path=results_path,
             test_name=test_name,
-            multiprocessing= configuration['test'].get('multiprocessing', True)
+            multiprocessing= multiprocessing
         )
 
     print("=== Benchmark Finished ===")

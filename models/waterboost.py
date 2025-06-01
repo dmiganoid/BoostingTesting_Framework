@@ -21,7 +21,7 @@ class XWaterBoostClassifier:
         self.estimators = []
         self.betas = []
         n_samples = X.shape[0]
-
+        margin_t = np.zeros(y.shape)
         D_t = np.ones(n_samples) / n_samples
         B_t = np.ones(n_samples)
         for t in range(self.n_estimators):
@@ -36,15 +36,14 @@ class XWaterBoostClassifier:
             self.estimator_weights.append(alpha_t)
             self.estimators.append(h_t)
 
-            
-            
+
             B_t *= np.where(pred==y, np.exp(-alpha_t), np.exp(alpha_t))
-            D_t = np.where( B_t <= 1,
-                           D_t*(1 + B_t)/2, # D_0 * B_t
+            D_t = np.where( B_t < 1,
+                           B_t * 1/n_samples,#D_t*(1 + B_t)/2, # D_0 * B_t
                            1/n_samples)
             if (1-(D_t).sum()) > 0:
                 decreased_weight = 1-(D_t).sum() #prev - now
-                increased_weight_d = np.where(B_t > 1, np.exp(alpha_t), 0)
+                increased_weight_d = np.where(B_t >= 1, np.exp(alpha_t), 0)
                 if increased_weight_d.sum() > 0:
                     D_t += decreased_weight * increased_weight_d / increased_weight_d.sum()
             if D_t.sum()==0:

@@ -46,6 +46,9 @@ def make_param_str(params_dict):
 
 def plot_mode(only_dirs=None, multiprocessing=True):
     results_root = "results"
+    datasets_root = "datasets"
+    datasets_dir_path = os.path.join(datasets_root)
+
     if not os.path.exists(results_root):
         print("No results folder found.")
         return
@@ -72,7 +75,7 @@ def plot_mode(only_dirs=None, multiprocessing=True):
                     csv_path = os.path.join(test_dir_path, "results.csv")
                     if not os.path.exists(csv_path):
                         continue
-                    pool.apply_async(plot_results, args=[csv_path, test_dir_path, metrics])
+                    pool.apply_async(plot_results, args=[csv_path, test_dir_path, metrics], kwds={"datasets_dir_path" : datasets_dir_path, })
                 pool.close()
                 pool.join()
                 print("=== Finished plots ===")
@@ -85,16 +88,15 @@ def plot_mode(only_dirs=None, multiprocessing=True):
                 csv_path = os.path.join(test_dir_path, "results.csv")
                 if not os.path.exists(csv_path):
                     continue
-                plot_results(csv_path, test_dir_path, metrics)
+                plot_results(csv_path, test_dir_path, metrics, datasets_dir_path=datasets_dir_path)
                 print(f"== Finished plots for {test_name} ==")
 
             print("== Finished plots ==")
 
 
-def plot_results(csv_path, test_dir_path, metrics):
-    train_file = os.path.join(test_dir_path, "train-dataset.csv")
-    valid_file = os.path.join(test_dir_path, "validation-dataset.csv")
-    test_file = os.path.join(test_dir_path, "test-dataset.csv")
+def plot_results(csv_path,test_dir_path, metrics,  datasets_dir_path=None):
+    dataset_name = os.path.basename(test_dir_path)
+
     df = pd.read_csv(csv_path, sep=",")
     if df.empty or "algorithm" not in df.columns:
         return
@@ -404,67 +406,50 @@ def plot_results(csv_path, test_dir_path, metrics):
     pred_dir=os.path.join(test_dir_path,"pred")
     
     if os.path.isdir(pred_dir):
-        if not (os.path.exists(train_file) and os.path.exists(test_file)):
+        dataset_file = os.path.join(datasets_dir_path, dataset_name)
+        if not (os.path.exists(dataset_file)):
             return
+        dataset = np.genfromtxt(dataset_file, delimiter=",")
+        X = dataset[:,:-1]
+        y = dataset[:,-1]
+        if X.shape[1] != 2:
+            return
+        fig = plt.figure(figsize=(10,5))
+        axis=plt.gca()
 
-        train_data = np.genfromtxt(train_file, delimiter=",")
-        test_data = np.genfromtxt(test_file, delimiter=",")
-        valid_data =  np.genfromtxt(valid_file, delimiter=",")
-        y_train = train_data[:, -1]
-        y_valid = valid_data[:, -1]
-        y_test = test_data[:, -1]
-        X_train = train_data[:, :-1]
-        X_valid = valid_data[:, :-1]
-        X_test = test_data[:, :-1]
-
-        X = np.vstack((X_train, X_valid, X_test))
-        y = np.hstack((y_train, y_valid, y_test))
-        fig = plt.figure(figsize=(9,3))
-        axes=plt.gca()
-
-        axes.scatter(x=X[:, 0], y=X[:,1], c=np.where(y==+1, 'r', 'b'), marker='.', s=12)
-        axes.grid(False)
-        axes.set_xticks([])
-        axes.set_yticks([])
+        axis.scatter(x=X[:, 0], y=X[:,1], c=np.where(y==+1, 'r', 'b'), marker='.', s=12)
+        axis.grid(False)
+        axis.set_xticks([])
+        axis.set_yticks([])
         plt.tight_layout()
         plt.savefig(os.path.join(plot_subdir,f"dataset.png"),dpi=150)
-                
-        if X_test.shape[1] == 2:
-            for algo_,row_ in best_validation_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
-                postfix=row_["file_postfix"]
+        plt.close()
 
-                pred_train_file=os.path.join(pred_dir,f"train_{postfix}.csv")
-                pred_test_file=os.path.join(pred_dir,f"test_{postfix}.csv")
-                if not(os.path.exists(pred_train_file) and os.path.exists(pred_test_file)):
-                    continue
+        for algo_,row_ in best_validation_accuracy_models[["file_postfix","model_params","model_params_dict"]].iterrows():
+            postfix=row_["file_postfix"]
 
-                y_train_pred=np.genfromtxt(pred_train_file,delimiter=",")
-                y_test_pred=np.genfromtxt(pred_test_file,delimiter=",")
+            pred_file=os.path.join(pred_dir,f"{postfix}_pred.csv")
+            if not(os.path.exists(pred_file)):
+                continue
 
-                fig, axes = plt.subplots(1, 2, figsize=(9,3))
-                fig.suptitle(f"{algo_} Train and Test Predictions")
-                
-                true_train_preds = np.where(y_train==y_train_pred)
-                true_test_preds = np.where(y_test==y_test_pred)
-                false_train_preds = np.where(y_train!=y_train_pred)
-                false_test_preds =  np.where(y_test!=y_test_pred)
+            pred=np.genfromtxt(pred_file,delimiter=",")
 
-                axes[0].scatter(x=X_train[true_train_preds, 0], y=X_train[true_train_preds, 1], c=np.where(y_train_pred[true_train_preds], 'r', 'b'), marker='+', s=12)
-                axes[0].scatter(x=X_train[false_train_preds, 0], y=X_train[false_train_preds, 1], c=np.where(y_train_pred[false_train_preds], 'darkred',  'darkblue'), marker='x')
-                axes[0].grid(False)
-                axes[0].set_xticks([])
-                axes[0].set_yticks([])
-                axes[0].set_title("Train")
+            fig = plt.figure(figsize=(10,5))
+            axis = plt.gca()
+            fig.suptitle(f"{algo_} Predictions")
+            
+            true_preds = np.where(y==pred)
+            false_preds =  np.where(y!=pred)
 
-                axes[1].scatter(x=X_test[true_test_preds, 0], y=X_test[true_test_preds, 1], c=np.where(y_test_pred[true_test_preds], 'r', 'b'), marker='+', s=12,)
-                axes[1].scatter(x=X_test[false_test_preds, 0], y=X_test[false_test_preds, 1], c=np.where(y_test_pred[false_test_preds],  'darkred', 'darkblue'), marker='x')
-                axes[1].grid(False)
-                axes[1].set_xticks([])
-                axes[1].set_yticks([])
-                axes[1].set_title("Test")
-                plt.tight_layout()
-                plt.savefig(os.path.join(plot_subdir,f"{algo_}_train-test-preds.png"),dpi=150)
-                plt.close()
+            axis.scatter(x=X[true_preds, 0], y=X[true_preds, 1], c=np.where(pred[true_preds], 'r', 'b'), marker='+', s=12)
+            axis.scatter(x=X[false_preds, 0], y=X[false_preds, 1], c=np.where(pred[false_preds], 'darkred',  'darkblue'), marker='x')
+            axis.grid(False)
+            axis.set_xticks([])
+            axis.set_yticks([])
+            axis.set_title("Train")
+            plt.tight_layout()
+            plt.savefig(os.path.join(plot_subdir,f"{algo_}_preds.png"),dpi=150)
+            plt.close()
 
 
 
