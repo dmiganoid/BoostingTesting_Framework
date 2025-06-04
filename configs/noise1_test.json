@@ -1,0 +1,43 @@
+{
+  "algorithms": ["AdaBoost", "MadaBoost", "BrownBoost", "FilterBoost", "RealAdaBoost", "LogitBoost", "ModestAdaBoost", "WaterBoost"],
+
+  "estimator": {
+    "estimator_type": "stump",
+    "estimator_params": { "max_depth": [1] }
+  },
+
+  "test": {
+    "test_size": 0.15,
+    "validation_size": 0.15,
+    "label_noise" : 0.1,
+    "feature_noise":0.1,
+    "retrain" : 11,
+    "random_state": 42,
+    "N_synthetic_tests": 0,
+    "multiprocessing" : 8,
+    "use_predefined_datasets": true,
+    "predefined_datasets" : ["wisconsin_breast_cancer_prepared.csv", "banana_quality.csv"],
+    "skip_datasets" : [
+      "creditcard.csv",
+      "abalone_prepared.csv",
+      "smart_grid_stability_augmented.csv"
+    ]
+    },
+
+  "model": {
+    "common": {
+      "n_estimators": [ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048],
+      "learning_rate":  [ 0.001, 0.032, 0.128, 0.256, 0.512, 1]
+    },
+    "BrownBoost": {
+      "c": [ 0.2, 0.25, 0.35, 0.5, 0.75, 1, 2, 3, 4 ],
+      "convergence_criterion": [0.001, 0.01] 
+    },
+    "MadaBoost": {},
+    "FilterBoost": {
+      "epsilon" : [0.1],
+      "delta" : [0.9],
+      "tau" : [0.1]
+    }
+  }
+}

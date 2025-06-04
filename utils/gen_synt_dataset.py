@@ -49,12 +49,15 @@ class DataSetGenerator:
             valstep=1
         )
 
-        self.save_ax = self.fig.add_axes([0.08, 0.16, 0.08, 0.04])
+        self.save_ax = self.fig.add_axes([0.10, 0.16, 0.06, 0.04])
         self.fig.set_label("Dataset Generator")
         self.save_button = Button(self.save_ax, 'Save', hovercolor='0.975')
 
         self.generate_button_ax = self.fig.add_axes([0.55, 0.04, 0.12, 0.05])
         self.generate_button = Button(self.generate_button_ax, 'Generate', hovercolor='0.975')
+
+        self.clear_button_ax = self.fig.add_axes([0.02, 0.16, 0.06, 0.04])
+        self.clear_button = Button(self.clear_button_ax, 'Clear', hovercolor='0.975')
 
         self.closed_button_ax = self.fig.add_axes([0.28, 0.04, 0.22, 0.05])
         self.closed_button = CheckButtons(
@@ -91,9 +94,12 @@ class DataSetGenerator:
         self.noise_variance_slider.on_changed(self.update_noise)
         self.save_button.on_clicked(self.save_sample)
         self.closed_button.on_clicked(self.update_bspline_c)
+        self.clear_button.on_clicked(self.clear)
+
         self.fig.canvas.mpl_connect('button_press_event', self.mouse_click)
         plt.grid()
         plt.show()
+
     def update_bsplinepoints(self, event):
         if event.inaxes == self.ax and event.xdata is not None and event.ydata is not None:
             self.bspline_points.append([event.xdata, event.ydata])
@@ -168,6 +174,27 @@ class DataSetGenerator:
 
     def update_noise(self, noise_val):
         self.curr_noise = noise_val
+
+    def clear(self, event):
+        self.X_control_points = []
+        self.X = []
+        self.labels = []
+        self.bspline_points = []
+        self.bspline_x = None
+        self.bspline_y = None
+        self.t_interval = None
+        self.bspline_points_scatter.remove()
+        self.bspline_points_scatter = self.ax.scatter([], [])
+        self.X_control_points_scatter.remove()
+        self.X_control_points_scatter = self.ax.scatter([],[])
+        self.samples_scatter.remove()
+        self.samples_scatter = self.ax.scatter([], [], )
+        self.fig.canvas.draw_idle()
+        self.bspline_line[0].remove()
+        self.bspline_line = self.ax.plot([], 'r--')
+        self.fig.canvas.draw_idle()
+
+
 
     def draw(self, event):
         if self.update_bspline():

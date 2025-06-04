@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split, ParameterGrid
 from multiprocessing import Pool
 from sklearn.metrics import accuracy_score
 
-def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, ind="", random_state=None, save_predictions=True, noise=0, test_size=0.15, validation_size=0.15):
+def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, ind="", random_state=None, save_predictions=True, feature_noise=0, label_noise=0, test_size=0.15, validation_size=0.15):
     rng = np.random.default_rng(seed=random_state)
     classes = np.sort(np.unique(y))
     class_proportions = [np.where(y==classes[0], 1, 0).sum() / y.shape[0], np.where(y==classes[1], 1, 0).sum() / y.shape[0]]
@@ -29,8 +29,13 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
     for _ in range(N_retrain):
         X_train_validation, X_test, y_train_validation, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size, stratify=y)   
         X_train, X_validation, y_train, y_validation = train_test_split(X_train_validation, y_train_validation, random_state=random_state, test_size=validation_size/(1-test_size), stratify=y_train_validation)
-        y_train = np.where(rng.random(X_train.shape[0]) < noise, 1-y_train,  y_train)
-        y_validation = np.where(rng.random(X_validation.shape[0]) < noise, 1-y_validation, y_validation)
+        
+        #feature_noise
+        X *= (np.ones(X.shape)+rng.normal(0, feature_noise, X.shape))
+        
+        # label noise
+        y_train = np.where(rng.random(X_train.shape[0]) < label_noise, 1-y_train,  y_train)
+        y_validation = np.where(rng.random(X_validation.shape[0]) < label_noise, 1-y_validation, y_validation)
     
         train_class_weights = np.where(y_train==major_class, 1, class_proportions[major_class]/class_proportions[minor_class])
         train_class_weights /= train_class_weights.sum()
@@ -256,7 +261,7 @@ class BoostingBenchmarkTrainer:
     def __init__(self, algorithms_data):
         self.algorithms_data = algorithms_data
 
-    def fit_and_evaluate(self, X, y, random_state=None, test_size=0.15, validation_size=0.15, N_retrain=1, results_path="results", test_name="test", multiprocessing=True, noise=0):
+    def fit_and_evaluate(self, X, y, random_state=None, test_size=0.15, validation_size=0.15, N_retrain=1, results_path="results", test_name="test", multiprocessing=True, label_noise=0, feature_noise=0):
         results = []
 
         print(f"== Starting {test_name} ==")
@@ -277,14 +282,14 @@ class BoostingBenchmarkTrainer:
                 for algorithm_class, algorithm_param_grid in self.algorithms_data:
                     print(f"= Testing {algorithm_class.__name__} =")
                     for ind, params in enumerate(ParameterGrid(algorithm_param_grid)):
-                        tasks.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X, y, os.path.join(results_path, test_name)], kwds={"ind" : ind, "random_state" : random_state, "save_predictions" : save_predictions, "N_retrain" : N_retrain, 'noise' : noise, "validation_size" : validation_size, "test_size" : test_size}))           
+                        tasks.append(pool.apply_async(train_test_model, args=[algorithm_class, params, X, y, os.path.join(results_path, test_name)], kwds={"ind" : ind, "random_state" : random_state, "save_predictions" : save_predictions, "N_retrain" : N_retrain, 'label_noise' : label_noise, "feature_noise" : feature_noise, "validation_size" : validation_size, "test_size" : test_size}))           
                 for t in tasks:
                     results.append(t.get(timeout=None))
         else:
             for algorithm_class, algorithm_param_grid in self.algorithms_data:
                 print(f"= Testing {algorithm_class.__name__} =")
                 for ind, params in enumerate(ParameterGrid(algorithm_param_grid)):
-                    results.append(train_test_model(algorithm_class, params, X, y, os.path.join(results_path, test_name), ind=ind, random_state=random_state, save_predictions=save_predictions,  N_retrain=N_retrain, noise=noise, test_size=test_size, validation_size=validation_size))
+                    results.append(train_test_model(algorithm_class, params, X, y, os.path.join(results_path, test_name), ind=ind, random_state=random_state, save_predictions=save_predictions,  N_retrain=N_retrain, label_noise=label_noise, feature_noise=feature_noise, test_size=test_size, validation_size=validation_size))
         
         print("= Writing results =")
         pd.DataFrame(results).to_csv(os.path.join(results_path, test_name, 'results.csv'), index=False, sep=",")

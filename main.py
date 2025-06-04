@@ -39,11 +39,11 @@ def run_benchmark(cfg_file):
         )
     trainer = BoostingBenchmarkTrainer(algorithms_data=algorithms_data)
 
-    noise = configuration['test'].get('artificial_noise', 0)
     N_synthetic_tests = configuration['test'].get('N_synthetic_tests', 3)
     synthetic_test_n_samples = configuration['test'].get('synthetic_test_n_samples', 1000)
     use_predefined = configuration['test'].get('use_predefined_datasets', False)
-    noise = configuration['test'].get('artificial_noise', 0)
+    feature_noise = configuration['test'].get('feature_noise', 0)
+    label_noise = configuration['test'].get('label_noise', 0)
     test_size = configuration['test'].get('test_size', 0.15)
     validation_size = configuration['test'].get('validation_size', 0.15)
     random_state = configuration['test'].get('random_state', 42)
@@ -74,7 +74,8 @@ def run_benchmark(cfg_file):
                 validation_size=validation_size,
                 test_size=test_size,
                 N_retrain = N_retrain,
-                noise = noise,
+                label_noise = label_noise,
+                feature_noise = feature_noise,
                 random_state=random_state,
                 results_path=results_path,
                 test_name=test_name,
@@ -92,7 +93,8 @@ def run_benchmark(cfg_file):
             validation_size=validation_size,
             test_size=test_size,
             N_retrain = N_retrain,
-            noise = noise,
+            label_noise = label_noise,
+            feature_noise = feature_noise,
             random_state=random_state,
             results_path=results_path,
             test_name=test_name,
