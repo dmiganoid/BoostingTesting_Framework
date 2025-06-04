@@ -15,6 +15,9 @@
     "N_synthetic_tests": 1,
     "multiprocessing" : 8,
     "use_predefined_datasets": true,
+    "predefined_datasets" : [
+      "dataset-generated-12.csv"
+    ],
     "skip_datasets" : [
       "creditcard.csv",
       "abalone_prepared.csv",

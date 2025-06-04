@@ -436,7 +436,7 @@ def plot_results(csv_path,test_dir_path, metrics,  datasets_dir_path=None):
 
             fig = plt.figure(figsize=(10,5))
             axis = plt.gca()
-            fig.suptitle(f"{algo_} Predictions")
+            #fig.suptitle(f"{algo_} Predictions")
             
             true_preds = np.where(y==pred)
             false_preds =  np.where(y!=pred)
@@ -446,7 +446,7 @@ def plot_results(csv_path,test_dir_path, metrics,  datasets_dir_path=None):
             axis.grid(False)
             axis.set_xticks([])
             axis.set_yticks([])
-            axis.set_title("Train")
+            axis.set_title(f"{algo_} Predictions")
             plt.tight_layout()
             plt.savefig(os.path.join(plot_subdir,f"{algo_}_preds.png"),dpi=150)
             plt.close()

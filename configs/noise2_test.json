@@ -16,7 +16,7 @@
     "N_synthetic_tests": 0,
     "multiprocessing" : 8,
     "use_predefined_datasets": true,
-    "predefined_datasets" : ["wisconsin_breast_cancer_prepared.csv", "banana_quality.csv"],
+    "predefined_datasets" : ["raisin_prepared.csv"],
     "skip_datasets" : [
       "creditcard.csv",
       "abalone_prepared.csv",
