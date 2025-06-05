@@ -34,6 +34,8 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
     test_accuracy_bestmodel = 0
     minor_class_test_accuracy_bestmodel = 0
     major_class_test_accuracy_bestmodel = 0
+    tr_time_bestmodel  = 0
+    inf_time_bestmodel = 0
 
     unweighted_train_accuracy_worstmodel = 0
     unweighted_validation_accuracy_worstmodel = 0
@@ -43,6 +45,8 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
     test_accuracy_worstmodel = 1
     minor_class_test_accuracy_worstmodel = 0
     major_class_test_accuracy_worstmodel = 0
+    tr_time_worstmodel = 0
+    inf_time_worstmodel = 0
 
     all_pred = np.zeros(y.shape)
     for _ in range(N_retrain):
