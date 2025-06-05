@@ -7,20 +7,28 @@
   },
 
   "test": {
-  "test_size": 0.15,
-  "validation_size":0.15,
-  "artificial_noise" : 0,
-  "retrain" : 6,
-  "random_state": 42,
-  "N_synthetic_tests": 1,
-  "multiprocessing" : 8,
-  "use_predefined_datasets": true,
-  "skip_datasets" : [
-    "creditcard.csv",
-    "abalone_prepared.csv",
-    "smart_grid_stability_augmented.csv"
-  ]
-  },
+    "test_size": 0.15,
+    "validation_size": 0.15,
+    "artificial_noise" : 0,
+    "retrain" : 11,
+    "random_state": 42,
+    "N_synthetic_tests": 0,
+    "multiprocessing" : 8,
+    "use_predefined_datasets": true,
+    "predefined_datasets" : [
+        "wisconsin_breast_cancer_prepared.csv",
+        "banana_quality.csv",
+        "keel_vehicle3_prepared.csv", 
+        "dataset-generated-2.csv",
+        "dataset-generated-3.csv",
+        "dataset-generated-4.csv",
+        "dataset-generated-5.csv",
+        "dataset-generated-6.csv",
+        "dataset-generated-8.csv",
+        "dataset-generated-9.csv",
+        "dataset-generated-12.csv"
+      ]
+    },
 
   "model": {
     "common": {

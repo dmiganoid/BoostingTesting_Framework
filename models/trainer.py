@@ -25,6 +25,25 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
     test_accuracy_sum = 0
     minor_class_test_accuracy_sum = 0
     major_class_test_accuracy_sum = 0
+
+    unweighted_train_accuracy_bestmodel = 0
+    unweighted_validation_accuracy_bestmodel = 0
+    unweighted_test_accuracy_bestmodel = 0
+    train_accuracy_bestmodel = 0
+    validation_accuracy_bestmodel = 0
+    test_accuracy_bestmodel = 0
+    minor_class_test_accuracy_bestmodel = 0
+    major_class_test_accuracy_bestmodel = 0
+
+    unweighted_train_accuracy_worstmodel = 0
+    unweighted_validation_accuracy_worstmodel = 0
+    unweighted_test_accuracy_worstmodel = 0
+    train_accuracy_worstmodel = 0
+    validation_accuracy_worstmodel = 0
+    test_accuracy_worstmodel = 1
+    minor_class_test_accuracy_worstmodel = 0
+    major_class_test_accuracy_worstmodel = 0
+
     all_pred = np.zeros(y.shape)
     for _ in range(N_retrain):
         X_train_validation, X_test, y_train_validation, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size, stratify=y)   
@@ -52,25 +71,61 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
         model = algorithm_class(**params)
         st = time.time()
         model.fit(X_train, y_train)
-        tr_time_sum += time.time() - st
+        tr_time = time.time() - st
         st = time.time()
         model.predict(X_test)
-        inf_time_sum += time.time() - st
+        inf_time = time.time() - st
 
-        all_pred += model.predict(X)
+        
 
-        unweighted_train_accuracy_sum += accuracy_score(model.predict(X_train), y_train)
-        unweighted_validation_accuracy_sum += accuracy_score(model.predict(X_validation), y_validation)
-        unweighted_test_accuracy_sum += accuracy_score(model.predict(X_test), y_test)
-        train_accuracy_sum += accuracy_score(model.predict(X_train), y_train, sample_weight=train_class_weights)
-        validation_accuracy_sum += accuracy_score(model.predict(X_validation), y_validation, sample_weight=validation_class_weights)
-        test_accuracy_sum += accuracy_score(model.predict(X_test), y_test, sample_weight=test_class_weights)
-        minor_class_test_accuracy_sum += accuracy_score(model.predict(X_test)[minor_class_test_ind], y_test[minor_class_test_ind])
-        major_class_test_accuracy_sum += accuracy_score(model.predict(X_test)[major_class_test_ind], y_test[major_class_test_ind])
+        unweighted_train_accuracy = accuracy_score(model.predict(X_train), y_train)
+        unweighted_validation_accuracy = accuracy_score(model.predict(X_validation), y_validation)
+        unweighted_test_accuracy = accuracy_score(model.predict(X_test), y_test)
+        train_accuracy = accuracy_score(model.predict(X_train), y_train, sample_weight=train_class_weights)
+        validation_accuracy = accuracy_score(model.predict(X_validation), y_validation, sample_weight=validation_class_weights)
+        test_accuracy = accuracy_score(model.predict(X_test), y_test, sample_weight=test_class_weights)
+        minor_class_test_accuracy = accuracy_score(model.predict(X_test)[minor_class_test_ind], y_test[minor_class_test_ind])
+        major_class_test_accuracy = accuracy_score(model.predict(X_test)[major_class_test_ind], y_test[major_class_test_ind])
+
+        if test_accuracy > test_accuracy_bestmodel:
+            all_pred_bestmodel = model.predict(X)
+            inf_time_bestmodel = inf_time
+            tr_time_bestmodel = tr_time
+            unweighted_train_accuracy_bestmodel = unweighted_train_accuracy
+            unweighted_validation_accuracy_bestmodel = unweighted_validation_accuracy
+            unweighted_test_accuracy_bestmodel = unweighted_test_accuracy
+            train_accuracy_bestmodel = train_accuracy
+            validation_accuracy_bestmodel = validation_accuracy
+            test_accuracy_bestmodel = test_accuracy
+            minor_class_test_accuracy_bestmodel = minor_class_test_accuracy
+            major_class_test_accuracy_bestmodel = major_class_test_accuracy
+
+        if test_accuracy < test_accuracy_worstmodel:
+            inf_time_worstmodel = inf_time
+            tr_time_worstmodel = tr_time
+            unweighted_train_accuracy_worstmodel = unweighted_train_accuracy
+            unweighted_validation_accuracy_worstmodel = unweighted_validation_accuracy
+            unweighted_test_accuracy_worstmodel = unweighted_test_accuracy
+            train_accuracy_worstmodel = train_accuracy
+            validation_accuracy_worstmodel = validation_accuracy
+            test_accuracy_worstmodel = test_accuracy
+            minor_class_test_accuracy_worstmodel = minor_class_test_accuracy
+            major_class_test_accuracy_worstmodel = major_class_test_accuracy
+
+        tr_time_sum += tr_time
+        inf_time_sum += inf_time
+        unweighted_train_accuracy_sum += unweighted_train_accuracy
+        unweighted_validation_accuracy_sum += unweighted_validation_accuracy
+        unweighted_test_accuracy_sum += unweighted_test_accuracy
+        train_accuracy_sum += train_accuracy
+        validation_accuracy_sum += validation_accuracy
+        test_accuracy_sum += test_accuracy
+        minor_class_test_accuracy_sum += minor_class_test_accuracy
+        major_class_test_accuracy_sum += major_class_test_accuracy
 
     if save_predictions:
         os.makedirs(os.path.join(results_path, 'pred'), exist_ok=True)
-        np.savetxt(os.path.join(results_path, 'pred', f'{algorithm_class.__name__}{ind}_pred.csv'), (all_pred/N_retrain)>0.5, delimiter=",")
+        np.savetxt(os.path.join(results_path, 'pred', f'{algorithm_class.__name__}{ind}_pred.csv'), all_pred_bestmodel, delimiter=",")
 
     outp = params
     if 'estimator' in outp:
@@ -79,16 +134,36 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
         "algorithm": algorithm_class.__name__,
         "file_postfix": f"{algorithm_class.__name__}{ind}",
         "model_params": outp,
-        "train_time_sec": tr_time_sum/N_retrain,
-        "inference_time_sec": inf_time_sum/N_retrain,
-        "unweighted_train_accuracy": unweighted_train_accuracy_sum/N_retrain,
-        "unweighted_validation_accuracy": unweighted_validation_accuracy_sum/N_retrain,
-        "unweighted_test_accuracy": unweighted_test_accuracy_sum/N_retrain,
-        "train_accuracy": train_accuracy_sum/N_retrain,
-        "validation_accuracy" : validation_accuracy_sum/N_retrain,
-        "test_accuracy": test_accuracy_sum/N_retrain,
-        "minor_class_test_accuracy": minor_class_test_accuracy_sum/N_retrain,
-        "major_class_test_accuracy": major_class_test_accuracy_sum/N_retrain
+        "mean_results_train_time_sec": tr_time_sum/N_retrain,
+        "mean_results_inference_time_sec": inf_time_sum/N_retrain,
+        "mean_results_unweighted_train_accuracy": unweighted_train_accuracy_sum/N_retrain,
+        "mean_results_unweighted_validation_accuracy": unweighted_validation_accuracy_sum/N_retrain,
+        "mean_results_unweighted_test_accuracy": unweighted_test_accuracy_sum/N_retrain,
+        "mean_results_train_accuracy": train_accuracy_sum/N_retrain,
+        "mean_results_validation_accuracy" : validation_accuracy_sum/N_retrain,
+        "mean_results_test_accuracy": test_accuracy_sum/N_retrain,
+        "mean_results_minor_class_test_accuracy": minor_class_test_accuracy_sum/N_retrain,
+        "mean_results_major_class_test_accuracy": major_class_test_accuracy_sum/N_retrain,
+        "best_results_train_time_sec": tr_time_bestmodel,
+        "best_results_inference_time_sec": inf_time_bestmodel,
+        "best_results_unweighted_train_accuracy": unweighted_train_accuracy_bestmodel,
+        "best_results_unweighted_validation_accuracy": unweighted_validation_accuracy_bestmodel,
+        "best_results_unweighted_test_accuracy": unweighted_test_accuracy_bestmodel,
+        "best_results_train_accuracy": train_accuracy_bestmodel,
+        "best_results_validation_accuracy" : validation_accuracy_bestmodel,
+        "best_results_test_accuracy": test_accuracy_bestmodel,
+        "best_results_minor_class_test_accuracy": minor_class_test_accuracy_bestmodel,
+        "best_results_major_class_test_accuracy": major_class_test_accuracy_bestmodel,
+        "worst_results_train_time_sec": tr_time_worstmodel,
+        "worst_results_inference_time_sec": inf_time_worstmodel,
+        "worst_results_unweighted_train_accuracy": unweighted_train_accuracy_worstmodel,
+        "worst_results_unweighted_validation_accuracy": unweighted_validation_accuracy_worstmodel,
+        "worst_results_unweighted_test_accuracy": unweighted_test_accuracy_worstmodel,
+        "worst_results_train_accuracy": train_accuracy_worstmodel,
+        "worst_results_validation_accuracy" : validation_accuracy_worstmodel,
+        "worst_results_test_accuracy": test_accuracy_worstmodel,
+        "worst_results_minor_class_test_accuracy": minor_class_test_accuracy_worstmodel,
+        "worst_results_major_class_test_accuracy": major_class_test_accuracy_worstmodel,
     }
 
 def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state):

@@ -9,25 +9,20 @@
   "test": {
     "test_size": 0.15,
     "validation_size": 0.15,
-    "label_noise" : 0.35,
-    "feature_noise":0.35,
-    "retrain" : 11,
+    "label_noise" : 0,
+    "feature_noise":0,
+    "retrain" : 4,
     "random_state": 42,
     "N_synthetic_tests": 0,
     "multiprocessing" : 8,
     "use_predefined_datasets": true,
-    "predefined_datasets" : ["raisin_prepared.csv"],
-    "skip_datasets" : [
-      "creditcard.csv",
-      "abalone_prepared.csv",
-      "smart_grid_stability_augmented.csv"
-    ]
+    "predefined_datasets" : ["dataset-generated-0.csv"]
     },
 
   "model": {
     "common": {
-      "n_estimators": [ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
-      "learning_rate":  [ 0.001, 0.02, 0.2, 0.5, 1]
+      "n_estimators": [ 2, 4, 8, 16, 32, 64],
+      "learning_rate":  [ 0.001, 0.512, 1]
     },
     "BrownBoost": {
       "c": [ 0.2, 0.25, 0.35, 0.5, 0.75, 1, 2, 3, 4 ],
