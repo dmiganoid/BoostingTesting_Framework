@@ -126,8 +126,8 @@ def plot_best_models_in_class(selected_models, plot_subdir):
     axis.set_xticks(ticks=x, labels=[alg for alg, data in selected_models.iterrows()])
     axis.set_ylabel("Test Accuracy")
     axis.tick_params('x', rotation=20)
-    y_min = np.min([selected_models['worst_results_train_accuracy'], selected_models['worst_results_test_accuracy'], selected_models['best_results_train_accuracy'], selected_models['best_results_train_accuracy']])
-    y_max = np.max([selected_models['worst_results_train_accuracy'], selected_models['worst_results_test_accuracy'], selected_models['best_results_train_accuracy'], selected_models['best_results_train_accuracy']])
+    y_min = np.min([selected_models['worst_results_train_accuracy'], selected_models['worst_results_test_accuracy'], selected_models['best_results_train_accuracy'], selected_models['best_results_test_accuracy']])
+    y_max = np.max([selected_models['worst_results_train_accuracy'], selected_models['worst_results_test_accuracy'], selected_models['best_results_train_accuracy'], selected_models['best_results_test_accuracy']])
     y_range = y_max - y_min
     axis.set_ylim(bottom=y_min - 0.1*y_range, top=y_max + 0.1*y_range)
 

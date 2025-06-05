@@ -50,8 +50,8 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
 
     all_pred = np.zeros(y.shape)
     for _ in range(N_retrain):
-        X_train_validation, X_test, y_train_validation, y_test = train_test_split(X, y, random_state=random_state, test_size=test_size, stratify=y)   
-        X_train, X_validation, y_train, y_validation = train_test_split(X_train_validation, y_train_validation, random_state=random_state, test_size=validation_size/(1-test_size), stratify=y_train_validation)
+        X_train_validation, X_test, y_train_validation, y_test = train_test_split(X, y, random_state=rng.integers(0, 1000, size=1)[0], test_size=test_size, stratify=y)   
+        X_train, X_validation, y_train, y_validation = train_test_split(X_train_validation, y_train_validation, random_state=rng.integers(0, 1000, size=1)[0], test_size=validation_size/(1-test_size), stratify=y_train_validation)
         
         #feature_noise
         X *= (np.ones(X.shape)+rng.normal(0, feature_noise, X.shape))
@@ -215,7 +215,7 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["estimator"] = base_estimators
             param_grid["c"] = algorithm_config["BrownBoost"]["c"]
             param_grid["convergence_criterion"] = algorithm_config["BrownBoost"]["convergence_criterion"]
-            param_grid["max_estimators"] = [ max(algorithm_config["common"]["n_estimators"])]
+            param_grid["n_estimators"] = [ max(algorithm_config["common"]["n_estimators"])]
         
         case "MadaBoost":
             from models.madaboost import MadaBoostClassifier, MadaBoostClassifierGPU

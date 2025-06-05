@@ -15,7 +15,7 @@ except ImportError:
 
 
 class BrownBoostClassifier:
-    def __init__(self, estimator=None, c=4, convergence_criterion=0.001, N_estimators=200_000, random_state=None):
+    def __init__(self, estimator=None, c=4, convergence_criterion=0.0001, n_estimators=20_000, max_iter_newton_raphson=10000, random_state=None):
         """ Initiates BrownBoost classifier
 
         Parameters
@@ -31,8 +31,8 @@ class BrownBoostClassifier:
         """
         self.estimator = estimator
         self.c = c
-        self.N_estimators = N_estimators
-        self.max_iter_newton_raphson = 1000
+        self.n_estimators = n_estimators
+        self.max_iter_newton_raphson = max_iter_newton_raphson
         self.convergence_criterion = convergence_criterion
         self.alphas = []
         self.estimators = []
@@ -57,7 +57,7 @@ class BrownBoostClassifier:
         s = self.c
         r = np.zeros(X.shape[0])
         k = 0
-        while s >= 0 and k < self.N_estimators:
+        while s >= 0 and k < self.n_estimators:
             #             print(f'iter is {k}\ts = {s}')
             k += 1
             w = np.exp(-(r + s)**2 / self.c)
@@ -165,7 +165,7 @@ class BrownBoostClassifier:
         return {
             "convergence_criterion": self.convergence_criterion,
             "c": self.c,
-            "N_estimators": self.N_estimators,
+            "n_estimators": self.n_estimators,
             "estimator": self.estimator,
             "random_state": self.random_state
         }
@@ -173,7 +173,7 @@ class BrownBoostClassifier:
     def set_params(self, **params):
         self.estimator = params.get("estimator", self.estimator)
         self.c = params.get("c", self.c)
-        self.N_estimators = params.get("N_estimators", self.N_estimators)
+        self.n_estimators = params.get("n_estimators", self.n_estimators)
         self.convergence_criterion = params.get(
             "convergence_criterion", self.convergence_criterion)
         self.random_state = params.get("random_state", self.random_state)
@@ -181,10 +181,10 @@ class BrownBoostClassifier:
 
 
 class BrownBoostClassifierGPU:
-    def __init__(self, estimator=None, c=4, convergence_criterion=0.001, N_estimators=200000, random_state=None):
+    def __init__(self, estimator=None, c=4, convergence_criterion=0.001, n_estimators=200000, random_state=None):
         self.estimator = estimator
         self.c = c
-        self.N_estimators = N_estimators
+        self.n_estimators = n_estimators
         self.max_iter_newton_raphson = 100
         self.convergence_criterion = convergence_criterion
         self.alphas = []
@@ -200,7 +200,7 @@ class BrownBoostClassifierGPU:
         r = cp.zeros(xg.shape[0], dtype=cp.float32)
         k = 0
 
-        while s >= 0 and k < self.N_estimators:
+        while s >= 0 and k < self.n_estimators:
             k += 1
             w = cp.exp(-(r + s)**2 / self.c)
 
@@ -285,12 +285,12 @@ class BrownBoostClassifierGPU:
         return (self.predict(X) == y).mean()
 
     def get_params(self, deep=True):
-        return {"convergence_criterion": self.convergence_criterion, "c": self.c, "N_estimators": self.N_estimators, "estimator": self.estimator, "random_state": self.random_state}
+        return {"convergence_criterion": self.convergence_criterion, "c": self.c, "n_estimators": self.n_estimators, "estimator": self.estimator, "random_state": self.random_state}
 
     def set_params(self, **p):
         self.estimator = p.get("estimator", self.estimator)
         self.c = p.get("c", self.c)
-        self.N_estimators = p.get("N_estimators", self.N_estimators)
+        self.n_estimators = p.get("n_estimators", self.n_estimators)
         self.convergence_criterion = p.get(
             "convergence_criterion", self.convergence_criterion)
         self.random_state = p.get("random_state", self.random_state)
