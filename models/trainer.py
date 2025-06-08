@@ -48,6 +48,18 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
     tr_time_worstmodel = 0
     inf_time_worstmodel = 0
 
+    inf_time_bestvalidmodel = 0
+    tr_time_bestvalidmodel = 0
+    unweighted_train_accuracy_bestvalidmodel = 0
+    unweighted_validation_accuracy_bestvalidmodel = 0
+    unweighted_test_accuracy_bestvalidmodel = 0
+    train_accuracy_bestvalidmodel = 0
+    validation_accuracy_bestvalidmodel = 0
+    test_accuracy_bestvalidmodel = 0
+    minor_class_test_accuracy_bestvalidmodel = 0
+    major_class_test_accuracy_bestvalidmodel = 0
+    
+
     all_pred = np.zeros(y.shape)
     for _ in range(N_retrain):
         X_train_validation, X_test, y_train_validation, y_test = train_test_split(X, y, random_state=rng.integers(0, 1000, size=1)[0], test_size=test_size, stratify=y)   
@@ -127,6 +139,21 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
         minor_class_test_accuracy_sum += minor_class_test_accuracy
         major_class_test_accuracy_sum += major_class_test_accuracy
 
+
+
+        if validation_accuracy > validation_accuracy_bestvalidmodel:
+            inf_time_bestvalidmodel = inf_time
+            tr_time_bestvalidmodel = tr_time
+            unweighted_train_accuracy_bestvalidmodel = unweighted_train_accuracy
+            unweighted_validation_accuracy_bestvalidmodel = unweighted_validation_accuracy
+            unweighted_test_accuracy_bestvalidmodel = unweighted_test_accuracy
+            train_accuracy_bestvalidmodel = train_accuracy
+            validation_accuracy_bestvalidmodel = validation_accuracy
+            test_accuracy_bestvalidmodel = test_accuracy
+            minor_class_test_accuracy_bestvalidmodel = minor_class_test_accuracy
+            major_class_test_accuracy_bestvalidmodel = major_class_test_accuracy
+
+
     if save_predictions:
         os.makedirs(os.path.join(results_path, 'pred'), exist_ok=True)
         np.savetxt(os.path.join(results_path, 'pred', f'{algorithm_class.__name__}{ind}_pred.csv'), all_pred_bestmodel, delimiter=",")
@@ -158,6 +185,16 @@ def train_test_model(algorithm_class, params, X, y, results_path,  N_retrain=1, 
         "best_results_test_accuracy": test_accuracy_bestmodel,
         "best_results_minor_class_test_accuracy": minor_class_test_accuracy_bestmodel,
         "best_results_major_class_test_accuracy": major_class_test_accuracy_bestmodel,
+        "bestvalid_results_train_time_sec": tr_time_bestvalidmodel,
+        "bestvalid_results_inference_time_sec": inf_time_bestvalidmodel,
+        "bestvalid_results_unweighted_train_accuracy": unweighted_train_accuracy_bestvalidmodel,
+        "bestvalid_results_unweighted_validation_accuracy": unweighted_validation_accuracy_bestvalidmodel,
+        "bestvalid_results_unweighted_test_accuracy": unweighted_test_accuracy_bestvalidmodel,
+        "bestvalid_results_train_accuracy": train_accuracy_bestvalidmodel,
+        "bestvalid_results_validation_accuracy" : validation_accuracy_bestvalidmodel,
+        "bestvalid_results_test_accuracy": test_accuracy_bestvalidmodel,
+        "bestvalid_results_minor_class_test_accuracy": minor_class_test_accuracy_bestvalidmodel,
+        "bestvalid_results_major_class_test_accuracy": major_class_test_accuracy_bestvalidmodel,
         "worst_results_train_time_sec": tr_time_worstmodel,
         "worst_results_inference_time_sec": inf_time_worstmodel,
         "worst_results_unweighted_train_accuracy": unweighted_train_accuracy_worstmodel,

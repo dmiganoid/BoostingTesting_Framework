@@ -117,19 +117,43 @@ def plot_best_models_in_class(selected_models, plot_subdir):
     axis.bar(x + bar_width/2, [ data['best_results_train_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, label='Dataset 1', color='darkblue', align='center')
     axis.bar(x + bar_width/2, [ data['best_results_test_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, label='Dataset 1', color='lightblue', align='center')
 
+    if False:
+        worst_train = [ data['worst_results_train_accuracy'] for _, data in selected_models.iterrows()]
+        worst_test = [ data['worst_results_test_accuracy'] for _, data in selected_models.iterrows()]
+        best_train = [ data['best_results_train_accuracy'] for _, data in selected_models.iterrows()]
+        best_test = [ data['best_results_test_accuracy'] for _, data in selected_models.iterrows()]
+
+        for x in X:
+            
+            # Plot left halves (worst)
+            if worst_train[x] > worst_test[x]:
+                axis.bar(x - bar_width/2, worst_train[x], width=bar_width, color='darkblue', align='center')
+                axis.bar(x - bar_width/2, worst_test[x], width=bar_width, color='lightblue', align='center')
+            else:
+                axis.bar(x - bar_width/2, worst_test[x], width=bar_width, color='lightblue', align='center')
+                axis.bar(x - bar_width/2, worst_train[x], width=bar_width, color='darkblue', align='center')
+            
+            # Plot right halves (best)
+            if best_train[x] > best_test[x]:
+                axis.bar(x + bar_width/2, best_train[x], width=bar_width, color='darkblue', align='center')
+                axis.bar(x + bar_width/2, best_test[x], width=bar_width, color='lightblue', align='center')
+            else:
+                axis.bar(x + bar_width/2, best_test[x], width=bar_width, color='lightblue', align='center')
+                axis.bar(x + bar_width/2, best_train[x], width=bar_width, color='darkblue', align='center')
+
 
     #sns.barplot(data=selected_models, x="algorithm", y="train_accuracy", color='darkblue', zorder=3, ax=axis)
     #sns.barplot(data=selected_models, x="algorithm", y="test_accuracy", color='lightblue', zorder=4, ax=axis)
 
     axis.legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
     axis.set_xlabel("")
-    axis.set_xticks(ticks=x, labels=[alg for alg, data in selected_models.iterrows()])
+    axis.set_xticks(ticks=x, labels=[alg.replace('Classifier', '') for alg, data in selected_models.iterrows()])
     axis.set_ylabel("Test Accuracy")
     axis.tick_params('x', rotation=20)
     y_min = np.min([selected_models['worst_results_train_accuracy'], selected_models['worst_results_test_accuracy'], selected_models['best_results_train_accuracy'], selected_models['best_results_test_accuracy']])
     y_max = np.max([selected_models['worst_results_train_accuracy'], selected_models['worst_results_test_accuracy'], selected_models['best_results_train_accuracy'], selected_models['best_results_test_accuracy']])
     y_range = y_max - y_min
-    axis.set_ylim(bottom=y_min - 0.1*y_range, top=y_max + 0.1*y_range)
+    axis.set_ylim(bottom=y_min - 0.1*y_range, top=y_max + 0.2*y_range)
 
     plt.tight_layout()
     out_png = os.path.join(plot_subdir, f"global_top_test_accuracy.png")
@@ -408,7 +432,7 @@ def plot_results(csv_path,test_dir_path, metrics,  datasets_dir_path=None):
 
     # PARAMETERS
     ### mean_results -> best_results
-    best_validation_accuracy_models = df.loc[[df[df['algorithm'] == algorithm]['best_results_validation_accuracy'].idxmax() for algorithm in algorithms]]
+    best_validation_accuracy_models = df.loc[[df[df['algorithm'] == algorithm]['bestvalid_results_validation_accuracy'].idxmax() for algorithm in algorithms]]
     best_validation_accuracy_models.set_index('algorithm', inplace=True)
     params_to_compare = ["n_estimators", "learning_rate", "c", "delta", "epsilon", "tau",'iterations' ]
 
