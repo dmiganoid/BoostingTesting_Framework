@@ -98,26 +98,26 @@ def plot_3d_2params(df_algorithm, selected_model, param_1, param_2, algorithm, p
     plt.savefig(out_png, dpi=150)
     plt.close()
 
-def plot_best_models_in_class(selected_models, plot_subdir):
+def plot_best_models_in_class(selected_models, plot_subdir, readable=True):
     fig = plt.figure(figsize=(10, 5))
     axis = plt.gca()
     plt.title("Best Models By Validation Accuracy")
     axis.grid(True, which='both', linestyle='--', linewidth=0.5, zorder=0)
-    x = np.arange(len(selected_models))  # bar positions
+    X = np.arange(len(selected_models))  # bar positions
 
     # Plot settings
     bar_width = 0.4  # Half width for each half
 
+    if readable:
+        # Plot left halves (dataset 1)
+        axis.bar(X - bar_width/2, [ data['worst_results_train_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, color='darkblue', align='center')
+        axis.bar(X - bar_width/2, [ data['worst_results_test_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, color='lightblue', align='center')
 
-    # Plot left halves (dataset 1)
-    axis.bar(x - bar_width/2, [ data['worst_results_train_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, label='Dataset 1', color='darkblue', align='center')
-    axis.bar(x - bar_width/2, [ data['worst_results_test_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, label='Dataset 1', color='lightblue', align='center')
+        # Plot right halves (dataset 2)
+        axis.bar(X + bar_width/2, [ data['best_results_train_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, color='darkblue', align='center')
+        axis.bar(X + bar_width/2, [ data['best_results_test_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, color='lightblue', align='center')
 
-    # Plot right halves (dataset 2)
-    axis.bar(x + bar_width/2, [ data['best_results_train_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, label='Dataset 1', color='darkblue', align='center')
-    axis.bar(x + bar_width/2, [ data['best_results_test_accuracy'] for _, data in selected_models.iterrows()], width=bar_width, label='Dataset 1', color='lightblue', align='center')
-
-    if False:
+    else:
         worst_train = [ data['worst_results_train_accuracy'] for _, data in selected_models.iterrows()]
         worst_test = [ data['worst_results_test_accuracy'] for _, data in selected_models.iterrows()]
         best_train = [ data['best_results_train_accuracy'] for _, data in selected_models.iterrows()]
@@ -142,12 +142,9 @@ def plot_best_models_in_class(selected_models, plot_subdir):
                 axis.bar(x + bar_width/2, best_train[x], width=bar_width, color='darkblue', align='center')
 
 
-    #sns.barplot(data=selected_models, x="algorithm", y="train_accuracy", color='darkblue', zorder=3, ax=axis)
-    #sns.barplot(data=selected_models, x="algorithm", y="test_accuracy", color='lightblue', zorder=4, ax=axis)
-
     axis.legend(handles=[mplpatches.Patch(color='darkblue', label='Train Accuracy'), mplpatches.Patch(color='lightblue', label='Test Accuracy')])
     axis.set_xlabel("")
-    axis.set_xticks(ticks=x, labels=[alg.replace('Classifier', '') for alg, data in selected_models.iterrows()])
+    axis.set_xticks(ticks=X, labels=[alg.replace('Classifier', '') for alg, data in selected_models.iterrows()])
     axis.set_ylabel("Test Accuracy")
     axis.tick_params('x', rotation=20)
     y_min = np.min([selected_models['worst_results_train_accuracy'], selected_models['worst_results_test_accuracy'], selected_models['best_results_train_accuracy'], selected_models['best_results_test_accuracy']])
@@ -156,7 +153,10 @@ def plot_best_models_in_class(selected_models, plot_subdir):
     axis.set_ylim(bottom=y_min - 0.1*y_range, top=y_max + 0.2*y_range)
 
     plt.tight_layout()
-    out_png = os.path.join(plot_subdir, f"global_top_test_accuracy.png")
+    if readable:
+        out_png = os.path.join(plot_subdir, f"global_top_test_accuracy.png")
+    else:
+        out_png = os.path.join(plot_subdir, f"global_top_test_accuracy_unreadable.png")
     plt.savefig(out_png, dpi=150)
     plt.close()
 
@@ -463,6 +463,7 @@ def plot_results(csv_path,test_dir_path, metrics,  datasets_dir_path=None):
 
     ### compare top test accuracy models from each class
     plot_best_models_in_class(best_validation_accuracy_models, plot_subdir)
+    plot_best_models_in_class(best_validation_accuracy_models, plot_subdir, readable=False)
 
     #  All algos Test Accuracy vs param
     plot_all_algorithms_lines_test_accuracy_param(df, algorithms, best_validation_accuracy_models, plot_subdir)
