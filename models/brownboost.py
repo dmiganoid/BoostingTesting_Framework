@@ -132,7 +132,7 @@ class BrownBoostClassifier:
         k = 0
         error += 1e-10
 
-        while change_amount > self.convergence_criterion and k < self.max_iter_newton_raphson:
+        while change_amount > self.convergence_criterion and k < self.max_iter_newton_raphson and t >= s and alpha>t > self.convergence_criterion:
             d = a + alpha * error - t
             w = np.exp(-d**2 / self.c)
 
@@ -147,11 +147,13 @@ class BrownBoostClassifier:
 
             sqrt_pi_c = math.sqrt(math.pi * self.c)
             denominator = 2*(V*W - U*B) + 1e-10
+
             alpha_step = (self.c*W*B + sqrt_pi_c*U*E)/denominator
             t_step = (self.c*B*B + sqrt_pi_c*V*E)/denominator
 
             alpha += alpha_step
             t += t_step
+
             change_amount = math.sqrt(alpha_step**2 + t_step**2)
 #             print(f'\t newton_raphson iter is {k}, {change_amount}')
             k += 1

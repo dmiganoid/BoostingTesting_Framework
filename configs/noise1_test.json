@@ -16,17 +16,12 @@
     "N_synthetic_tests": 0,
     "multiprocessing" : 8,
     "use_predefined_datasets": true,
-    "predefined_datasets" : ["wisconsin_breast_cancer_prepared.csv", "raisin_prepared.csv"],
-    "skip_datasets" : [
-      "creditcard.csv",
-      "abalone_prepared.csv",
-      "smart_grid_stability_augmented.csv"
-    ]
+    "predefined_datasets" : ["wisconsin_breast_cancer_prepared.csv", "raisin_prepared.csv"]
     },
 
   "model": {
     "common": {
-      "n_estimators": [ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024],
+      "n_estimators": [ 2, 4, 8, 16, 32, 64, 128],
       "learning_rate":  [ 0.001, 0.02, 0.2, 0.5, 1]
     },
     "BrownBoost": {
