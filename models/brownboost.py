@@ -165,10 +165,10 @@ class BrownBoostClassifier:
 
     def get_params(self, deep=True):
         return {
-            "convergence_criterion": self.convergence_criterion,
-            "c": self.c,
-            "n_estimators": self.n_estimators,
             "estimator": self.estimator,
+            "n_estimators": self.n_estimators,
+            "c": self.c,
+            "convergence_criterion": self.convergence_criterion,
             "random_state": self.random_state
         }
 

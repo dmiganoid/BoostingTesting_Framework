@@ -58,8 +58,8 @@ class RealAdaBoostClassifier:
 
     def get_params(self, deep=True):
         return {
-            "n_estimators": self.n_estimators,
             "estimator": self.estimator,
+            "n_estimators": self.n_estimators,
             "learning_rate": self.learning_rate,
             "random_state": self.random_state
         }

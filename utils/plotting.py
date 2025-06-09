@@ -206,7 +206,7 @@ def plot_all_algorithms_lines_test_accuracy_param(df, algorithms, selected_model
     plt.close()
 
 def save_best_models_params(selected_models, plot_subdir):
-    test_params_str = [f"{algorithm}: {make_param_str(data['model_params_dict'])}" for algorithm, data in selected_models[['model_params_dict']].iterrows()]
+    test_params_str = [f"{algorithm}, {make_param_str(data['model_params_dict'])}" for algorithm, data in selected_models[['model_params_dict']].iterrows()]
 
     with open(os.path.join(plot_subdir, f"global_top_params.csv"), "w") as f:
         f.write("\nTop Test Models:\n")
