@@ -1,5 +1,5 @@
 {
-  "algorithms": ["CatBoost", "XGBoost", "LightGBM", "NGBoost", "SMOTEBoost", "RUSBoost", "GradientBoost", "AdaBoost", "SOWAdaBoost"],
+  "algorithms": ["CatBoost", "XGBoost", "LightGBM", "SMOTEBoost", "RUSBoost", "GradientBoost", "AdaBoost", "SOWAdaBoost"],
 
   "estimator": {
     "estimator_type": "stump",
@@ -9,7 +9,8 @@
   "test": {
     "test_size": 0.15,
     "validation_size": 0.15,
-    "artificial_noise" : 0,
+    "label_noise" : 0,
+    "feature_noise": 0,
     "retrain" : 11,
     "random_state": 42,
     "N_synthetic_tests": 0,
@@ -32,8 +33,8 @@
 
   "model": {
     "common": {
-    "n_estimators": [ 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048],
-    "learning_rate":  [ 0.001, 0.032, 0.128, 0.256, 0.512, 1]
+    "n_estimators": [ 2, 4, 8, 16, 32, 64, 128, 256, 512],
+    "learning_rate":  [ 0.001, 0.01, 0.1, 1]
     },
     "CatBoost": {
       "depth": [1]

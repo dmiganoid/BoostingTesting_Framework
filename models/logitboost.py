@@ -1,4 +1,4 @@
-"""Implementation of the LogitBoost algorithm."""
+"""Implementation of the LogitBoost algorithm.""" # Courtesy of https://github.com/artemmavrin/logitboost
 
 from __future__ import division
 

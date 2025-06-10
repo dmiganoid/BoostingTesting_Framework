@@ -235,29 +235,24 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
 
         case "GradientBoost":
-            from models.gradientboost import (
-                GradientBoostingClassifier, GradientBoostingClassifierGPU
-            )
-            gpu = algorithm_config["GradientBoost"].get("gpu", False)
-            algorithm_class = GradientBoostingClassifierGPU if gpu else GradientBoostingClassifier
+            from models.gradientboost import GradientBoostingClassifier
+            algorithm_class = GradientBoostingClassifier
             param_grid["estimator"] = base_regressor_estimators
             param_grid["n_estimators"] = algorithm_config['common']['n_estimators']
             param_grid["learning_rate"] = algorithm_config['common']['learning_rate']
             param_grid["loss"] = algorithm_config["GradientBoost"]["loss"]
 
         case "BrownBoost":
-            from models.brownboost import BrownBoostClassifier, BrownBoostClassifierGPU
-            gpu = algorithm_config["BrownBoost"].get("gpu", False)
-            algorithm_class = BrownBoostClassifierGPU if gpu else BrownBoostClassifier
+            from models.brownboost import BrownBoostClassifier
+            algorithm_class = BrownBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["c"] = algorithm_config["BrownBoost"]["c"]
             param_grid["convergence_criterion"] = algorithm_config["BrownBoost"]["convergence_criterion"]
             param_grid["n_estimators"] = [ max(algorithm_config["common"]["n_estimators"])]
         
         case "MadaBoost":
-            from models.madaboost import MadaBoostClassifier, MadaBoostClassifierGPU
-            gpu = algorithm_config["MadaBoost"].get("gpu", False)
-            algorithm_class = MadaBoostClassifierGPU if gpu else MadaBoostClassifier
+            from models.madaboost import MadaBoostClassifier
+            algorithm_class = MadaBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
@@ -284,9 +279,8 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
 
         case "SOWAdaBoost":
-            from models.sowadaboost import SOWAdaBoostClassifier, SOWAdaBoostClassifierGPU
-            gpu = algorithm_config["SOWAdaBoost"].get("gpu", False)
-            algorithm_class = SOWAdaBoostClassifierGPU if gpu else SOWAdaBoostClassifier
+            from models.sowadaboost import SOWAdaBoostClassifier
+            algorithm_class = SOWAdaBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
@@ -294,13 +288,6 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
         case "WaterBoost":
             from models.waterboost import WaterBoostClassifier
             algorithm_class = WaterBoostClassifier
-            param_grid["estimator"] = base_estimators
-            param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
-            param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]
-
-        case "XWaterBoost":
-            from models.waterboost import XWaterBoostClassifier
-            algorithm_class = XWaterBoostClassifier
             param_grid["estimator"] = base_estimators
             param_grid["n_estimators"] = algorithm_config["common"]["n_estimators"]
             param_grid["learning_rate"] = algorithm_config["common"]["learning_rate"]

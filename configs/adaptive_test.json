@@ -9,7 +9,8 @@
   "test": {
     "test_size": 0.15,
     "validation_size": 0.15,
-    "artificial_noise" : 0,
+    "label_noise" : 0,
+    "feature_noise":0,
     "retrain" : 11,
     "random_state": 42,
     "N_synthetic_tests": 0,

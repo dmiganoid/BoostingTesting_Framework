@@ -1,4 +1,4 @@
-# Courtesy of https://github.com/lapis-zero09/BrownBoost
+# Slightly modified version of https://github.com/lapis-zero09/BrownBoost
 
 
 import math
@@ -83,6 +83,8 @@ class BrownBoostClassifier:
             s -= t
             self.alphas.append(alpha)
             self.estimators.append(h)
+        self.n_estimators = k
+        
         return self
 
     def predict(self, X):
@@ -176,8 +178,7 @@ class BrownBoostClassifier:
         self.estimator = params.get("estimator", self.estimator)
         self.c = params.get("c", self.c)
         self.n_estimators = params.get("n_estimators", self.n_estimators)
-        self.convergence_criterion = params.get(
-            "convergence_criterion", self.convergence_criterion)
+        self.convergence_criterion = params.get("convergence_criterion", self.convergence_criterion)
         self.random_state = params.get("random_state", self.random_state)
         return self
 
