@@ -220,7 +220,7 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
                 base_regressor_estimators.append(DecisionTreeRegressor(**params))
                 
         case "neural_network":
-            from neural_classifier import NeuralBinaryClassifier
+            from models.neural_classifier import NeuralBinaryClassifier
             for params in ParameterGrid(base_estimator_cfg['estimator_params']):
                 base_estimators.append(NeuralBinaryClassifier(**params))
 

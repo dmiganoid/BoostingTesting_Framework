@@ -1,11 +1,11 @@
 import numpy as np
-from models.trainer import BoostingBenchmarkTrainer
+from utils.trainer import BoostingBenchmarkTrainer
 from sklearn.datasets import make_classification
 import json
 from os import mkdir
 import os
 from time import time
-from models.trainer import load_algorithm
+from utils.trainer import load_algorithm
 import pandas as pd
 import argparse
 import sys
