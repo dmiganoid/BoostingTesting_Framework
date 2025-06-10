@@ -2,14 +2,13 @@ import numpy as np
 from utils.trainer import BoostingBenchmarkTrainer
 from sklearn.datasets import make_classification
 import json
-from os import mkdir
+from os import mkdir, makedirs
 import os
 from time import time
 from utils.trainer import load_algorithm
 import pandas as pd
 import argparse
-import sys
-import subprocess
+
 
 
 def run_benchmark(cfg_file):
@@ -23,6 +22,7 @@ def run_benchmark(cfg_file):
 
     print("=== Starting Boosting Benchmark ===")
 
+    makedirs("results", exist_ok=True)
     results_folder = f'{int(time())}-{cfg_file.split('.')[0]}'
     results_path = os.path.join('results', results_folder) 
     mkdir(results_path)
