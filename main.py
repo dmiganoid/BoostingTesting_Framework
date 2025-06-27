@@ -5,7 +5,7 @@ import json
 from os import mkdir, makedirs
 import os
 from time import time
-from utils.trainer import load_algorithm
+from utils.loader import load_algorithm, load_metric
 import pandas as pd
 import argparse
 
@@ -48,8 +48,11 @@ def run_benchmark(cfg_file):
     validation_size = configuration['test'].get('validation_size', 0.15)
     random_state = configuration['test'].get('random_state', 42)
     multiprocessing = configuration['test'].get('multiprocessing', True)
-    N_retrain=configuration['test'].get('retrain', 1)
+    N_retrain = configuration['test'].get('retrain', 1)
     skip_datasets = configuration['test'].get('skip_datasets', [])
+    metric = load_metric(configuration['test'].get('metric', "accuracy"))
+    use_class_weights = configuration['test'].get('use_class_weights', False)
+    
     if use_predefined:
         predefined_datasets = configuration['test'].get('predefined_datasets', [])
 
@@ -71,6 +74,8 @@ def run_benchmark(cfg_file):
 
             trainer.fit_and_evaluate(
                 X, y,
+                metric_function=metric, 
+                use_class_weights=False,
                 validation_size=validation_size,
                 test_size=test_size,
                 N_retrain = N_retrain,
@@ -90,6 +95,8 @@ def run_benchmark(cfg_file):
         test_name = f"random-{i}"
         trainer.fit_and_evaluate(
             X, y,
+            metric_function=metric, 
+            use_class_weights=False,
             validation_size=validation_size,
             test_size=test_size,
             N_retrain = N_retrain,
