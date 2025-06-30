@@ -12,6 +12,18 @@ import argparse
 
 
 def run_benchmark(cfg_file):
+    """Run boosting algorithm benchmark with specified configuration.
+
+    Loads configuration, initializes algorithms, and evaluates them on predefined or synthetic datasets.
+    Saves results to a timestamped folder. Supports multiprocessing and customizable noise levels.
+
+    Args:
+        cfg_file (str): Name of the JSON configuration file.
+
+    Returns:
+        str: Name of the results folder where benchmark outputs are saved.
+    """
+
     config_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "configs", cfg_file
@@ -111,23 +123,14 @@ def run_benchmark(cfg_file):
     print("=== Benchmark Finished ===")
     return results_folder
 
-def parse_results_to_df(json_path):
-    with open(json_path, "r") as f:
-        data = json.load(f) 
-    rows = []
-    for model_name, info in data.items():
-        row = {
-            "model": model_name,
-            "accuracy": info["test_accuracy"], 
-            "train_time_sec": info["train_time_sec"],
-            "inference_time_sec": info["inference_time_sec"],
-            "memory_usage_mb": info["memory_usage_mb"]
-        }
-        rows.append(row)
-    return pd.DataFrame(rows)
-
 
 def main_cli():
+    """Command-line interface for BoostingTesting_Framework.
+
+    Parses arguments in one of the execute modes: generate synthetic dataset, train model,
+    plot results, or train and then plot. Supports configuration file and multiprocessing options.
+    """
+
     parser = argparse.ArgumentParser(description="BoostingTesting_Framework CLI")
     parser.add_argument("--mode", choices=["generate", "train", "plot", "trainplot"], required=True)
     parser.add_argument("--cfg")

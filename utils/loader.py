@@ -1,8 +1,19 @@
 from sklearn.model_selection import ParameterGrid
-from multiprocessing import Pool
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 def load_metric(metric):
+    """
+    Maps a string identifier for a classification metric to its corresponding
+    scikit-learn metric function.
+
+    Args:
+        metric (str): Name of the classification metric to load.
+                      Supported values: "accuracy", "f1", "precision", "recall".
+
+    Returns:
+        callable: The scikit-learn metric function corresponding to the input metric.
+    """
+        
     match metric:
         case "accuracy":
             return accuracy_score
@@ -18,6 +29,26 @@ def load_metric(metric):
 
 
 def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state):
+    """
+    Loads a specified boosting algorithm and its hyperparameter grid based on the input configuration.
+
+    Args:
+        algorithm (str): Name of the boosting algorithm to load. Supported values:
+            "AdaBoost", "GradientBoost", "BrownBoost", "MadaBoost", "RealAdaBoost",
+            "ModestAdaBoost", "LogitBoost", "SOWAdaBoost", "WaterBoost", "FilterBoost",
+            "CatBoost", "XGBoost", "LightGBM", "NGBoost", "SMOTEBoost", "RUSBoost".
+        algorithm_config (dict): Configuration dictionary containing hyperparameters.
+        base_estimator_cfg (dict): Configuration for base estimators, including:
+            - 'estimator_type' (str): Type of base estimator ("stump" or "neural_network").
+            - 'estimator_params' (dict): Parameters for the base estimator.
+        random_state (int): Random seed for reproducibility (not used in this function).
+
+    Returns:
+        tuple: A tuple containing:
+            - algorithm_class (class): The class of the selected boosting algorithm.
+            - param_grid (dict): Hyperparameter grid for the algorithm.
+    """
+
     base_estimators = []
     base_regressor_estimators = []
 
@@ -167,6 +198,5 @@ def load_algorithm(algorithm, algorithm_config, base_estimator_cfg, random_state
         
         case _:
             raise ValueError(f"Unknown algorithm: {algorithm}")
-
 
     return (algorithm_class, param_grid)

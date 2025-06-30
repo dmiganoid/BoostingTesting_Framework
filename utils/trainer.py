@@ -8,7 +8,48 @@ from sklearn.model_selection import train_test_split, ParameterGrid
 from multiprocessing import Pool
 from collections.abc import Callable
 
-def train_test_model(algorithm_class, params, X, y, results_path,  metric_score : Callable[[float, float], float], use_class_weights=False, N_retrain=1, ind="", random_state=None, save_predictions=True, feature_noise=0, label_noise=0, test_size=0.15, validation_size=0.15):
+def train_test_model(algorithm_class, params, X, y, results_path, metric_score : Callable[[float, float], float], use_class_weights=False, N_retrain=1, ind="", random_state=None, save_predictions=True, feature_noise=0, label_noise=0, test_size=0.15, validation_size=0.15):
+    """Train and evaluate a boosting model with specified parameters.
+
+    Fits the model on training data, evaluates performance on train, validation, and test sets,
+    and tracks best/worst/mean metrics across retraining iterations. On each iterations supports noise injection and
+    class-weighted metrics. Saves predictions if specified.
+
+    Args:
+        algorithm_class (class): Boosting algorithm class to instantiate.
+        params (dict): Hyperparameters for the algorithm.
+        X (array-like): Feature matrix for training and evaluation.
+        y (array-like): Target labels for training and evaluation.
+        results_path (str): Directory to save results and predictions.
+        metric_score (Callable): Function to compute evaluation metric, taking true and predicted values.
+        use_class_weights (bool, optional): Whether to use class weights in metrics. Defaults to False.
+        N_retrain (int, optional): Number of retraining iterations. Defaults to 1.
+        ind (str, optional): Index or identifier for the model run. Defaults to "".
+        random_state (int, optional): Random seed for reproducibility. Defaults to None.
+        save_predictions (bool, optional): Whether to save model predictions. Defaults to True.
+        feature_noise (float, optional): Proportion of feature noise to inject. Defaults to 0.
+        label_noise (float, optional): Proportion of label noise to inject. Defaults to 0.
+        test_size (float, optional): Proportion of data for test split. Defaults to 0.15.
+        validation_size (float, optional): Proportion of data for validation split. Defaults to 0.15.
+
+    Returns:
+        dict: Dictionary containing detailed performance metrics and metadata with the following structure:
+            - 'algorithm' (str): Name of the algorithm class (e.g., 'AdaBoostClassifier').
+            - 'file_postfix' (str): Identifier for the model run, combining algorithm name and index (e.g., 'AdaBoostClassifier0').
+            - 'params' (dict): Hyperparameters used for the model, with 'estimator' converted to string if present.
+            - 'mean_results' (dict): Averaged metrics over N_retrain iterations, including:
+                - 'tr_time' (float): Average training time.
+                - 'inf_time' (float): Average inference time.
+                - 'train_metric' (float): Average metric score on training set.
+                - 'validation_metric' (float): Average metric score on validation set.
+                - 'test_metric' (float): Average metric score on test set.
+                - 'minor_class_test_metric' (float): Average metric score for the minority class on test set.
+                - 'major_class_test_metric' (float): Average metric score for the majority class on test set.
+            - 'best_test_metric_results' (dict): Metrics for the iteration with the highest test set metric, with the same keys as 'mean_results'.
+            - 'worst_test_metric_results' (dict): Metrics for the iteration with the lowest test set metric, with the same keys as 'mean_results'.
+            - 'best_validation_metric_results' (dict): Metrics for the iteration with the highest validation set metric, with the same keys as 'mean_results'.
+    """
+    
     rng = np.random.default_rng(seed=random_state)
 
     mean_results = {
@@ -23,7 +64,6 @@ def train_test_model(algorithm_class, params, X, y, results_path,  metric_score 
         "minor_class_test_metric" : 0,
         "major_class_test_metric" : 0
     }
-
 
     best_test_metric_results = {    
         "train_metric" : 0,
@@ -75,11 +115,13 @@ def train_test_model(algorithm_class, params, X, y, results_path,  metric_score 
         X_train, X_validation, y_train, y_validation = train_test_split(X_train_validation, y_train_validation, random_state=rng.integers(0, 1000, size=1)[0], test_size=validation_size/(1-test_size), stratify=y_train_validation)
         
         # feature noise
-        X *= (np.ones(X.shape)+rng.normal(0, feature_noise, X.shape))
+        if feature_noise != 0:
+            X *= (np.ones(X.shape)+rng.normal(0, feature_noise, X.shape))
         
         # label noise
-        y_train = np.where(rng.random(X_train.shape[0]) < label_noise, 1-y_train,  y_train)
-        y_validation = np.where(rng.random(X_validation.shape[0]) < label_noise, 1-y_validation, y_validation)
+        if label_noise != 0:
+            y_train = np.where(rng.random(X_train.shape[0]) < label_noise, 1-y_train,  y_train)
+            y_validation = np.where(rng.random(X_validation.shape[0]) < label_noise, 1-y_validation, y_validation)
     
         if use_class_weights: # set weights for each object
             train_class_weights = np.where(y_train==major_class, 1, class_proportions[major_class]/class_proportions[minor_class])
@@ -172,9 +214,39 @@ def train_test_model(algorithm_class, params, X, y, results_path,  metric_score 
 
 class BoostingBenchmarkTrainer:
     def __init__(self, algorithms_data):
+        """Initialize BoostingBenchmarkTrainer with algorithm configurations.
+
+        Args:
+            algorithms_data (list): List of tuples containing algorithm classes and their parameter grids.
+        """
+
         self.algorithms_data = algorithms_data
 
     def fit_and_evaluate(self, X, y, metric_function : Callable[[float, float], float], use_class_weights : bool=False, random_state=None, test_size=0.15, validation_size=0.15, N_retrain=1, results_path="results", test_name="test", multiprocessing=True, label_noise=0, feature_noise=0):
+        """Train and evaluate performance of boosting algorithms on provided data.
+
+        Fits algorithms on input data, evaluates performance using a specified metric, and saves results.
+        Supports multiprocessing for parallel execution and noise injection in data.
+
+        Args:
+            X (array-like): Feature matrix for training and evaluation.
+            y (array-like): Target labels for training and evaluation.
+            metric_function (Callable): Function to analize performance, taking true and predicted values.
+            use_class_weights (bool, optional): Whether to use class weights in metric computation. Weights are defined by class proportions.  Defaults to False.
+            random_state (int, optional): Random seed for reproducibility. Defaults to None.
+            test_size (float, optional): Proportion of data for test split. Defaults to 0.15.
+            validation_size (float, optional): Proportion of data for validation split. Defaults to 0.15.
+            N_retrain (int, optional): Number of retraining iterations. Defaults to 1.
+            results_path (str, optional): Directory to save results. Defaults to "results".
+            test_name (str, optional): Name of the test for result organization. Defaults to "test".
+            multiprocessing (bool or int, optional): Enable multiprocessing or specify number of CPUs. Defaults to True.
+            label_noise (float, optional): Proportion of class labels to be flipped. Defaults to 0.
+            feature_noise (float, optional):  MSE of Relative error for features under normal distribution. Defaults to 0.
+
+        Returns:
+            int: Returns 0 upon successful completion.
+        """
+
         results = []
 
         print(f"== Starting {test_name} ==")
